@@ -1,7 +1,13 @@
 #ifndef PRIVATE_H
 #define PRIVATE_H
 
+#include "libs/cco.h"
 #include "libs/zc_strto_static.h"
+
+#define XXH_INLINE_ALL
+#define XXH_NO_STREAM
+#define XXH_NO_STDLIB
+#include "libs/xxhash.h"
 
 #ifndef JSMN_STATIC
 #undef JSMN_STATIC
@@ -18,14 +24,17 @@ struct jx_item
 #ifdef JSMN_PARENT_LINKS
     int parent;
 #endif
+    // struct cco_hnode node;
 };
 
 struct jx
 {
     char *str;
     int first_errno;
+    struct cco_hlist *hash_table;
     jsmn_parser parser;
     unsigned size;
+    unsigned bits;
     unsigned size_max;
     struct jsmntok toks[];
 };

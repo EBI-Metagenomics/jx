@@ -10,26 +10,46 @@
 
 static inline struct jx_item const *as_item(struct jsmntok const *tok)
 {
-    union jx_union *u = (union jx_union *)tok;
+    union jx_union const *u = (union jx_union const *)tok;
     return &u->item;
+}
+
+static inline struct jsmntok const *as_tok(struct jx_item const *item)
+{
+    union jx_union const *u = (union jx_union const *)item;
+    return &u->tok;
 }
 
 static void null_terminate(unsigned size, struct jsmntok toks[], char *data);
 static void expand_types(unsigned size, struct jsmntok toks[],
                          char const *data);
+static int string_hash(struct jx *jx, struct jx_item const *item);
 
-struct jx *jx_new(unsigned nitems)
+struct jx *jx_new(unsigned bits)
 {
-    struct jx *jx = malloc(sizeof(struct jx) + sizeof(struct jsmntok) * nitems);
+    unsigned size = 1 << bits;
+    struct jx *jx = malloc(sizeof(struct jx) + sizeof(struct jsmntok) * size);
     if (jx)
     {
         jx->first_errno = 0;
-        jx->size_max = nitems;
+        jx->hash_table = malloc(sizeof(struct cco_hlist) * size);
+        if (!jx->hash_table)
+        {
+            free(jx);
+            return NULL;
+        }
+        jx->bits = bits;
+        jx->size_max = size;
     }
+    // __cco_hash_init(jx->hash_table, size);
     return jx;
 }
 
-void jx_del(struct jx *jx) { free(jx); }
+void jx_del(struct jx *jx)
+{
+    free(jx->hash_table);
+    free(jx);
+}
 
 static int convert_to_errno(int rc)
 {
@@ -61,21 +81,12 @@ int jx_parse(struct jx *jx, char *str)
 
 unsigned jx_nitems(struct jx const *jx) { return jx->size; }
 
-void jx_assert_nitems(struct jx *jx, unsigned nitems)
+struct jx_item *jx_root(struct jx const *jx)
 {
-    if (jx->first_errno) return;
-    jx->first_errno = jx_nitems(jx) == nitems ? 0 : EINVAL;
+    return (struct jx_item *)as_item(jx->toks);
 }
-
-struct jx_item const *jx_root(struct jx const *jx) { return as_item(jx->toks); }
 
 int jx_errno(struct jx const *jx) { return jx->first_errno; }
-
-static inline struct jsmntok const *as_tok(struct jx_item const *item)
-{
-    union jx_union *u = (union jx_union *)item;
-    return &u->tok;
-}
 
 char *jx_string(struct jx const *jx, struct jx_item const *item)
 {
@@ -91,13 +102,38 @@ int64_t jx_int64(struct jx *jx, struct jx_item const *item)
     return v;
 }
 
+struct jx_object jx_object(struct jx *jx, struct jx_item *item)
+{
+    struct jx_object obj = {0};
+
+    jx_assert_object(jx, item);
+    if (jx->first_errno) return obj;
+
+    unsigned nchild = jx_nchild(jx, item);
+    struct jx_item *i = jx_next(jx, item);
+    for (unsigned j = 0; j < nchild; ++j)
+    {
+        jx_assert_string(jx, i);
+        jx_assert_nchild(jx, i, 1);
+        if (jx->first_errno) return obj;
+        obj.key = string_hash(jx, i);
+        // __cco_hlist_add(&i->node,
+        //                 &jx->hash_table[cco_hash_min(obj.key, jx->bits)]);
+        item = jx_next(jx, i);
+    }
+    return obj;
+}
+
 static struct jx_item end = {JX_UNDEFINED, 0, 0, 0};
 
-struct jx_item const *jx_next(struct jx const *jx, struct jx_item const *item)
+struct jx_item *jx_next(struct jx const *jx, struct jx_item *item)
 {
     if (jx->first_errno) return &end;
-    struct jsmntok const *next = as_tok(item + 1);
-    return (unsigned)(next - jx->toks) < jx_nitems(jx) ? as_item(next) : &end;
+    struct jsmntok const *next = as_tok(item);
+    ++next;
+    return (unsigned)(next - jx->toks) < jx_nitems(jx)
+               ? (struct jx_item *)as_item(next)
+               : &end;
 }
 
 bool jx_end(struct jx const *jx, struct jx_item const *item)
@@ -146,6 +182,19 @@ bool jx_is_string(struct jx const *jx, struct jx_item const *item)
 {
     if (jx->first_errno) return false;
     return as_tok(item)->type == JX_STRING;
+}
+
+void jx_assert_nitems(struct jx *jx, unsigned nitems)
+{
+    if (jx->first_errno) return;
+    jx->first_errno = jx_nitems(jx) == nitems ? 0 : EINVAL;
+}
+
+void jx_assert_nchild(struct jx *jx, struct jx_item const *item,
+                      unsigned nchild)
+{
+    if (jx->first_errno) return;
+    jx->first_errno = jx_nchild(jx, item) == nchild ? 0 : EINVAL;
 }
 
 void jx_assert_array(struct jx *jx, struct jx_item const *item)
@@ -239,4 +288,15 @@ static void expand_types(unsigned size, struct jsmntok toks[], char const *data)
         else
             assert(false);
     }
+}
+
+static int string_hash(struct jx *jx, struct jx_item const *item)
+{
+    unsigned len = (unsigned)(item->end - item->start);
+    union
+    {
+        XXH64_hash_t xxh64;
+        int cco;
+    } key = {.xxh64 = XXH3_64bits(jx_string(jx, item), len)};
+    return key.cco;
 }

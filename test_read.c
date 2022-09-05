@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define JX_NITEMS 128
+#define JX_BITS 7
 
 inline static void print_ctx(char const *func, char const *file, int line)
 {
@@ -21,15 +21,6 @@ inline static void print_ctx(char const *func, char const *file, int line)
             exit(1);                                                           \
         }                                                                      \
     } while (0);
-
-static char text0[] = "{ \"name\" : \"Jack\", \"age\" : 27 }";
-static char text1[] = "[1, 6]";
-static char text2[] = "[[1, 4], 6]";
-static char text3[] = "[{ \"name\" : \"Jack\"}, 6]";
-static char text4[] = "null";
-static char text5[] = "{null}";
-static char text6[] =
-    "{ \"name\" : \"Jack\", \"age\" : 27, \"scores\": [1, 2, 3, 4] }";
 
 struct person
 {
@@ -68,12 +59,12 @@ static void test_flat_object(void)
     static char json[] = "{ \"name\" : \"Jack\", \"age\" : 27 }";
     struct person person = {0};
 
-    struct jx *jx = jx_new(JX_NITEMS);
+    struct jx *jx = jx_new(JX_BITS);
     ASSERT(jx);
     ASSERT(jx_parse(jx, json) == 5);
     jx_assert_nitems(jx, 5);
 
-    struct jx_item const *item = jx_root(jx);
+    struct jx_item *item = jx_root(jx);
     jx_assert_object(jx, item);
     item = jx_next(jx, item);
     while (!jx_end(jx, item))

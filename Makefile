@@ -5,7 +5,7 @@ JX_VERSION := 0.1.0
 SRC = jx.c
 OBJ = $(SRC:.c=.o)
 HDR = jx.h private.h
-LIBS = libs/jsmn.h libs/zc_strto_static.h
+LIBS = libs/jsmn.h libs/zc_strto_static.h libs/cco.h libs/xxhash.h
 
 all: libjx.a
 
