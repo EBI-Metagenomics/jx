@@ -1,10 +1,12 @@
 #include "jx.h"
 #include "compiler.h"
+#include "zc_strto_static.h"
 #include <assert.h>
+#include <errno.h>
 #include <stddef.h>
 #include <string.h>
 
-static thread_local int jx_errno_local = 0;
+static thread_local int errno_local = 0;
 
 enum
 {
@@ -100,6 +102,7 @@ static void sentinel_init(struct jx jx[])
 
 int jx_parse(struct jx jx[], char *json)
 {
+    cursor(jx).length = strlen(json);
     cursor(jx).json = json;
     struct jx_parser *parser = &PARSER(jx);
     unsigned n = 1 << parser->bits;
@@ -112,9 +115,9 @@ int jx_parse(struct jx jx[], char *json)
     return rc;
 }
 
-int jx_errno(void) { return jx_errno_local; }
+int jx_errno(void) { return errno_local; }
 
-void jx_clear(void) { jx_errno_local = 0; }
+void jx_clear(void) { errno_local = 0; }
 
 int jx_type(struct jx const jx[])
 {
@@ -189,6 +192,50 @@ struct jx *jx_up(struct jx jx[])
     nodes(jx)[parent].prev = cursor(jx).pos;
     cursor(jx).pos = parent;
     return jx;
+}
+
+struct jx *jx_array_at(struct jx jx[], int idx) {}
+
+struct jx *jx_object_at(struct jx jx[], char const *key)
+{
+    if (jx_type(jx) != JX_OBJECT)
+    {
+        errno_local = EINVAL;
+        return jx;
+    }
+
+    int pos = cursor(jx).pos;
+    jx_down(jx);
+    while (strcmp(jx_as_string(jx), key))
+    {
+        if (jx_type(jx) == JX_SENTINEL)
+        {
+            rollback(jx, pos);
+            errno_local = EINVAL;
+            return jx;
+        }
+        jx_right(jx);
+    }
+    return jx_down(jx);
+}
+
+char *jx_as_string(struct jx jx[])
+{
+    if (errno_local) return &cursor(jx).json[cursor(jx).length];
+
+    cursor(jx).json[cnode(jx).end] = '\0';
+    return &cursor(jx).json[cnode(jx).start];
+}
+
+int jx_as_int(struct jx jx[])
+{
+    if (errno_local) return 0;
+
+    cursor(jx).json[cnode(jx).end] = '\0';
+    int val = zc_strto_int(&cursor(jx).json[cnode(jx).start], NULL, 10);
+    errno_local = errno;
+    errno = 0;
+    return val;
 }
 
 /**

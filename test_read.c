@@ -1,5 +1,6 @@
 #include "jx.h"
 #include "test_utils.h"
+#include <errno.h>
 #include <string.h>
 
 JX_DECLARE(jx, 8);
@@ -53,6 +54,20 @@ int main(void)
     ASSERT(jx_type(jx_right(jx)) == JX_SENTINEL);
     ASSERT(jx_type(jx_back(jx)) == JX_STRING);
     ASSERT(jx_type(jx_up(jx)) == JX_OBJECT);
+    ASSERT(jx_errno() == 0);
+    ASSERT(jx_type(jx_object_at(jx, "notfound")) == JX_OBJECT);
+    ASSERT(jx_errno() == EINVAL);
+    jx_clear();
+    ASSERT(!strcmp(jx_as_string(jx_object_at(jx, "name")), "Jack"));
+    ASSERT(jx_errno() == 0);
+    jx_back(jx);
+    jx_back(jx);
+    ASSERT(!strcmp(jx_as_string(jx_object_at(jx, "name")), "Jack"));
+    ASSERT(jx_errno() == 0);
+    jx_back(jx);
+    jx_back(jx);
+    ASSERT(jx_as_int(jx_object_at(jx, "age")) == 27);
+    ASSERT(jx_errno() == 0);
 #if 0
 
     it = jx_right(&jx, it);

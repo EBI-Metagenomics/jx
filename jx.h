@@ -27,6 +27,7 @@ struct jx_parser
 
 struct jx_cursor
 {
+    int length;
     char *json;
     int pos;
 };
@@ -69,23 +70,21 @@ struct jx *jx_next(struct jx[]);
 struct jx *jx_right(struct jx[]);
 struct jx *jx_up(struct jx[]);
 
-#if 0
-struct jx_it *jx_array_at(struct jx *, struct jx_array *, unsigned idx);
-struct jx_it *jx_object_at(struct jx *, struct jx_object *, char const *key);
-
-#define jx_at(jx, it, pos)                                                     \
-    _Generic((it), struct jx_array *                                           \
-             : jx_array_at, struct jx_object *                                 \
-             : jx_object_at)(jx, it, pos)
+struct jx *jx_array_at(struct jx[], int idx);
+struct jx *jx_object_at(struct jx[], char const *key);
 /* --navigation end-----------------------------------------------------------*/
 
+#if 0
 /* --casting begin------------------------------------------------------------*/
 struct jx_array *jx_as_array(struct jx *, struct jx_it *);
 struct jx_object *jx_as_object(struct jx *, struct jx_it *);
-struct jx_string *jx_as_string(struct jx *, struct jx_it *);
-int64_t jx_as_int64(struct jx *, struct jx_it const *);
-int32_t jx_as_int32(struct jx *, struct jx_it const *);
-int jx_as_int(struct jx *, struct jx_it const *);
+#endif
+
+char *jx_as_string(struct jx[]);
+// int64_t jx_as_int64(struct jx *, struct jx_it const *);
+// int32_t jx_as_int32(struct jx *, struct jx_it const *);
+int jx_as_int(struct jx[]);
+#if 0
 uint64_t jx_as_uint64(struct jx *, struct jx_it const *);
 uint32_t jx_as_uint32(struct jx *, struct jx_it const *);
 unsigned jx_as_uint(struct jx *, struct jx_it const *);
