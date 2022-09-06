@@ -7,7 +7,7 @@
 
 enum
 {
-    JX_UNDEF = 0,
+    JX_SENTINEL = 0,
     JX_OBJECT = 1,
     JX_ARRAY = 2,
     JX_STRING = 3,
@@ -31,12 +31,6 @@ struct jx_cursor
     int pos;
 };
 
-struct jx_sentinel
-{
-    int type;
-    int prev;
-};
-
 struct jx_node
 {
     int type;
@@ -53,7 +47,6 @@ struct jx
     {
         struct jx_parser parser;
         struct jx_cursor cursor;
-        struct jx_sentinel sentinel;
         struct jx_node node;
     };
 };
@@ -70,7 +63,7 @@ int jx_type(struct jx const[]);
 /* --query end----------------------------------------------------------------*/
 
 /* --navigation begin---------------------------------------------------------*/
-// struct jx_it *jx_back(struct jx *, struct jx_it *);
+struct jx *jx_back(struct jx[]);
 // struct jx_it *jx_down(struct jx *, struct jx_it *);
 struct jx *jx_next(struct jx[]);
 // struct jx_it *jx_right(struct jx *, struct jx_it *);

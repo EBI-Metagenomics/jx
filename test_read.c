@@ -20,11 +20,25 @@ int main(void)
     int rc = jx_parse(jx, json);
     ASSERT(rc == 5);
     ASSERT(jx_errno() == 0);
+
     ASSERT(jx_type(jx) == JX_OBJECT);
+    ASSERT(jx_type(jx_next(jx)) == JX_STRING);
+    ASSERT(jx_type(jx_next(jx)) == JX_STRING);
+    ASSERT(jx_type(jx_next(jx)) == JX_STRING);
+    ASSERT(jx_type(jx_next(jx)) == JX_NUMBER);
+    ASSERT(jx_type(jx_next(jx)) == JX_SENTINEL);
+    ASSERT(jx_type(jx_next(jx)) == JX_SENTINEL);
+
+    ASSERT(jx_type(jx_back(jx)) == JX_NUMBER);
+    ASSERT(jx_type(jx_back(jx)) == JX_STRING);
+    ASSERT(jx_type(jx_back(jx)) == JX_STRING);
+    ASSERT(jx_type(jx_back(jx)) == JX_STRING);
+    ASSERT(jx_type(jx_back(jx)) == JX_OBJECT);
+    ASSERT(jx_type(jx_back(jx)) == JX_OBJECT);
 #if 0
 
     it = jx_right(&jx, it);
-    ASSERT(jx_type(it) == JX_UNDEF);
+    ASSERT(jx_type(it) == JX_SENTINEL);
     it = jx_back(&jx, it);
     ASSERT(jx_type(it) == JX_OBJECT);
 
@@ -33,9 +47,9 @@ int main(void)
     it = jx_down(&jx, it);
     ASSERT(jx_type(it) == JX_STRING);
     it = jx_down(&jx, it);
-    ASSERT(jx_type(it) == JX_UNDEF);
+    ASSERT(jx_type(it) == JX_SENTINEL);
     it = jx_down(&jx, it);
-    ASSERT(jx_type(it) == JX_UNDEF);
+    ASSERT(jx_type(it) == JX_SENTINEL);
     it = jx_back(&jx, it);
     ASSERT(jx_type(it) == JX_STRING);
     struct jx_string *str = jx_as_string(&jx, it);

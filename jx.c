@@ -15,8 +15,7 @@ enum
 {
     PARSER_OFFSET = 0,
     CURSOR_OFFSET = 1,
-    SENTINEL_OFFSET = 2,
-    NODE_OFFSET = 3,
+    NODE_OFFSET = 2,
 };
 
 enum
@@ -43,24 +42,23 @@ int jsmn_parse(struct jx_parser *parser, const char *js, const size_t len,
                struct jx_node *tokens, const unsigned int num_tokens);
 
 #define PARSER(jx) ((jx)[PARSER_OFFSET].parser)
-#define CURSOR(jx) ((jx)[CURSOR_OFFSET].cursor)
-#define SENTINEL(jx) ((jx)[SENTINEL_OFFSET].sentinel)
-#define NODES(jx) (&((jx)[NODE_OFFSET].node))
+#define cursor(jx) ((jx)[CURSOR_OFFSET].cursor)
+#define nodes(jx) (&((jx)[NODE_OFFSET].node))
+#define sentinel(jx) nodes(jx)[PARSER(jx).nnodes]
 
 void jx_init(struct jx jx[], int bits)
 {
     PARSER(jx).bits = bits;
-    CURSOR(jx).pos = 0;
-    SENTINEL(jx).type = JX_UNDEF;
+    cursor(jx).pos = 0;
 }
 
 static void convert_types(struct jx jx[])
 {
     for (int i = 0; i < PARSER(jx).nnodes; ++i)
     {
-        if (NODES(jx)[i].type == JSMN_PRIMITIVE)
+        if (nodes(jx)[i].type == JSMN_PRIMITIVE)
         {
-            switch (CURSOR(jx).json[NODES(jx)[i].start])
+            switch (cursor(jx).json[nodes(jx)[i].start])
             {
             case '-':
             case '0':
@@ -73,14 +71,14 @@ static void convert_types(struct jx jx[])
             case '7':
             case '8':
             case '9':
-                NODES(jx)[i].type = JX_NUMBER;
+                nodes(jx)[i].type = JX_NUMBER;
                 break;
             case 't':
             case 'f':
-                NODES(jx)[i].type = JX_BOOL;
+                nodes(jx)[i].type = JX_BOOL;
                 break;
             case 'n':
-                NODES(jx)[i].type = JX_NULL;
+                nodes(jx)[i].type = JX_NULL;
                 break;
             default:
                 assert(false);
@@ -89,13 +87,25 @@ static void convert_types(struct jx jx[])
     }
 }
 
+static void sentinel_init(struct jx jx[])
+{
+    sentinel(jx).type = JX_SENTINEL;
+    sentinel(jx).start = 0;
+    sentinel(jx).end = 1;
+    sentinel(jx).size = 0;
+    sentinel(jx).parent = PARSER(jx).nnodes;
+    sentinel(jx).prev = PARSER(jx).nnodes;
+}
+
 int jx_parse(struct jx jx[], char *json)
 {
-    CURSOR(jx).json = json;
-    int rc = jsmn_parse(&PARSER(jx), json, strlen(json), NODES(jx),
-                        1 << PARSER(jx).bits);
+    cursor(jx).json = json;
+    struct jx_parser *parser = &PARSER(jx);
+    unsigned n = 1 << parser->bits;
+    int rc = jsmn_parse(parser, json, strlen(json), nodes(jx), n);
     if (rc < 0) return rc;
-    PARSER(jx).nnodes = rc;
+    parser->nnodes = rc;
+    sentinel_init(jx);
     convert_types(jx);
     return rc;
 }
@@ -106,14 +116,28 @@ void jx_clear(void) { jx_errno_local = 0; }
 
 int jx_type(struct jx const jx[])
 {
-    return NODES((struct jx *)jx)[CURSOR((struct jx *)jx).pos].type;
+    return nodes((struct jx *)jx)[cursor((struct jx *)jx).pos].type;
+}
+
+struct jx *jx_back(struct jx jx[])
+{
+    cursor(jx).pos = nodes(jx)[cursor(jx).pos].prev;
+    return jx;
 }
 
 struct jx *jx_next(struct jx jx[])
 {
-    if (CURSOR(jx).pos + 1 >= PARSER(jx).nnodes)
+    if (jx_type(jx) == JX_SENTINEL) return jx;
+
+    if (cursor(jx).pos + 1 >= PARSER(jx).nnodes)
     {
-        CURSOR(jx).pos = 2;
+        nodes(jx)[PARSER(jx).nnodes].prev = cursor(jx).pos;
+        cursor(jx).pos = PARSER(jx).nnodes;
+    }
+    else
+    {
+        nodes(jx)[cursor(jx).pos + 1].prev = cursor(jx).pos;
+        cursor(jx).pos++;
     }
     return jx;
 }
