@@ -1,13 +1,10 @@
 #include "jx.h"
+#include <assert.h>
 #include <stddef.h>
 #include <string.h>
 
 enum
 {
-    JSMN_UNDEFINED = 0,
-    JSMN_OBJECT = 1 << 0,
-    JSMN_ARRAY = 1 << 1,
-    JSMN_STRING = 1 << 2,
     JSMN_PRIMITIVE = 1 << 3
 };
 
@@ -51,11 +48,52 @@ static inline struct jx_node *get_node(struct jx jx[], int idx)
 
 void jx_init(struct jx jx[], int bits) { get_parser(jx)->bits = bits; }
 
+static void convert_types(int size, struct jx jx[])
+{
+    struct jx_parser *parser = get_parser(jx);
+    struct jx_cursor *cursor = get_cursor(jx);
+    for (int i = 0; i < size; ++i)
+    {
+        if (get_node(jx, i)->type == JSMN_PRIMITIVE)
+        {
+            switch (cursor->json[get_node(jx, i)->start])
+            {
+            case '-':
+            case '0':
+            case '1':
+            case '2':
+            case '3':
+            case '4':
+            case '5':
+            case '6':
+            case '7':
+            case '8':
+            case '9':
+                get_node(jx, i)->type = JX_NUMBER;
+                break;
+            case 't':
+            case 'f':
+                get_node(jx, i)->type = JX_BOOL;
+                break;
+            case 'n':
+                get_node(jx, i)->type = JX_NULL;
+                break;
+            default:
+                assert(false);
+            }
+        }
+    }
+}
+
 int jx_parse(struct jx jx[], char *json)
 {
     struct jx_parser *parser = get_parser(jx);
+    get_cursor(jx)->json = json;
     struct jx_node *node = get_node(jx, 0);
-    return jsmn_parse(parser, json, strlen(json), node, 1 << parser->bits);
+    int rc = jsmn_parse(parser, json, strlen(json), node, 1 << parser->bits);
+    if (rc < 0) return rc;
+    convert_types(rc, jx);
+    return rc;
 }
 
 /**
@@ -176,7 +214,7 @@ static int jsmn_parse_string(struct jx_parser *parser, const char *js,
                 parser->pos = start;
                 return JSMN_ERROR_NOMEM;
             }
-            jsmn_fill_token(token, JSMN_STRING, start + 1, parser->pos);
+            jsmn_fill_token(token, JX_STRING, start + 1, parser->pos);
             token->parent = parser->toksuper;
             return 0;
         }
@@ -264,14 +302,14 @@ int jsmn_parse(struct jx_parser *parser, const char *js, const size_t len,
             {
                 struct jx_node *t = &tokens[parser->toksuper];
                 /* In strict mode an object or array can't become a key */
-                if (t->type == JSMN_OBJECT)
+                if (t->type == JX_OBJECT)
                 {
                     return JSMN_ERROR_INVAL;
                 }
                 t->size++;
                 token->parent = parser->toksuper;
             }
-            token->type = (c == '{' ? JSMN_OBJECT : JSMN_ARRAY);
+            token->type = (c == '{' ? JX_OBJECT : JX_ARRAY);
             token->start = parser->pos;
             parser->toksuper = parser->toknext - 1;
             break;
@@ -281,7 +319,7 @@ int jsmn_parse(struct jx_parser *parser, const char *js, const size_t len,
             {
                 break;
             }
-            type = (c == '}' ? JSMN_OBJECT : JSMN_ARRAY);
+            type = (c == '}' ? JX_OBJECT : JX_ARRAY);
             if (parser->toknext < 1)
             {
                 return JSMN_ERROR_INVAL;
@@ -332,8 +370,8 @@ int jsmn_parse(struct jx_parser *parser, const char *js, const size_t len,
             break;
         case ',':
             if (tokens != NULL && parser->toksuper != -1 &&
-                tokens[parser->toksuper].type != JSMN_ARRAY &&
-                tokens[parser->toksuper].type != JSMN_OBJECT)
+                tokens[parser->toksuper].type != JX_ARRAY &&
+                tokens[parser->toksuper].type != JX_OBJECT)
             {
                 parser->toksuper = tokens[parser->toksuper].parent;
             }
@@ -357,8 +395,8 @@ int jsmn_parse(struct jx_parser *parser, const char *js, const size_t len,
             if (tokens != NULL && parser->toksuper != -1)
             {
                 const struct jx_node *t = &tokens[parser->toksuper];
-                if (t->type == JSMN_OBJECT ||
-                    (t->type == JSMN_STRING && t->size != 0))
+                if (t->type == JX_OBJECT ||
+                    (t->type == JX_STRING && t->size != 0))
                 {
                     return JSMN_ERROR_INVAL;
                 }

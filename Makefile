@@ -18,7 +18,7 @@ libjx.a: $(OBJ)
 test_read.o: test_read.c
 	$(CC) $(JX_CFLAGS) -c test_read.c
 
-test_read: test_read.o | libjx.a
+test_read: test_read.o libjx.a
 	$(CC) -o $@ $< -L. -ljx
 
 test: test_read
