@@ -16,72 +16,45 @@ enum
     JX_NUMBER = 6,
 };
 
-struct jx_object
+struct jx_cursor
 {
-    int start;
-    int end;
-    int size;
-    int type;
-    int parent;
-    int previous;
+    char *json;
 };
 
-struct jx_array
+struct jx_parser
 {
-    int start;
-    int end;
-    int size;
-    int type;
-    int parent;
-    int previous;
+    int bits;
+    unsigned pos;
+    unsigned toknext;
+    int toksuper;
 };
 
-struct jx_string
+struct jx_node
 {
+    int type;
     int start;
     int end;
     int size;
-    int type;
     int parent;
-    int previous;
-};
-
-struct jx_it
-{
-    int start;
-    int end;
-    int size;
-    int type;
-    int parent;
-    int previous;
+    int prev;
 };
 
 struct jx
 {
-    size_t length;
-    char const *json;
-
-    int ferrno;
-
-    struct
+    union
     {
-        unsigned pos;     /* offset in the JSON string */
-        unsigned toknext; /* next token to allocate */
-        int toksuper;     /* superior token node, e.g. parent object or array */
-    } parser;
-
-    unsigned nitems;
-    unsigned max_nitems;
-    struct jx_it *it;
+        struct jx_cursor cursor;
+        struct jx_parser parser;
+        struct jx_node node;
+    };
 };
 
-#define JX_DECLARE(name, bits)                                                 \
-    static struct jx_it name##_container[1 << (bits)];                         \
-    static struct jx name = {                                                  \
-        0, "", 0, {0, 0, -1}, 0, 1 << (bits), &(name##_container[0])};
+#define JX_DECLARE(name, bits) struct jx name[1 << (bits)];
 
-struct jx_it *jx_parse(struct jx *, char const *json);
+void jx_init(struct jx[], int bits);
+int jx_parse(struct jx[], char *json);
 
+#if 0
 /* --query begin--------------------------------------------------------------*/
 int jx_errno(struct jx const *);
 int jx_type(struct jx_it const *);
@@ -125,5 +98,6 @@ void jx_strcpy(struct jx *, char *dst, struct jx_string const *,
                size_t dst_size);
 size_t jx_strlen(struct jx *, struct jx_string const *);
 /* --string utils end---------------------------------------------------------*/
+#endif
 
 #endif
