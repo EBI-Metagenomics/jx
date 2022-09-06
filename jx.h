@@ -64,10 +64,10 @@ int jx_type(struct jx const[]);
 
 /* --navigation begin---------------------------------------------------------*/
 struct jx *jx_back(struct jx[]);
-// struct jx_it *jx_down(struct jx *, struct jx_it *);
+struct jx *jx_down(struct jx[]);
 struct jx *jx_next(struct jx[]);
-// struct jx_it *jx_right(struct jx *, struct jx_it *);
-// struct jx_it *jx_up(struct jx *, struct jx_it *);
+struct jx *jx_right(struct jx[]);
+struct jx *jx_up(struct jx[]);
 
 #if 0
 struct jx_it *jx_array_at(struct jx *, struct jx_array *, unsigned idx);

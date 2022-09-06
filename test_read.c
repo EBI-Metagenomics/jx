@@ -35,6 +35,24 @@ int main(void)
     ASSERT(jx_type(jx_back(jx)) == JX_STRING);
     ASSERT(jx_type(jx_back(jx)) == JX_OBJECT);
     ASSERT(jx_type(jx_back(jx)) == JX_OBJECT);
+
+    ASSERT(jx_type(jx_up(jx)) == JX_SENTINEL);
+    ASSERT(jx_type(jx_back(jx)) == JX_OBJECT);
+    ASSERT(jx_type(jx_down(jx)) == JX_STRING);
+    ASSERT(jx_type(jx_down(jx)) == JX_STRING);
+    ASSERT(jx_type(jx_down(jx)) == JX_SENTINEL);
+    ASSERT(jx_type(jx_down(jx)) == JX_SENTINEL);
+    ASSERT(jx_type(jx_back(jx)) == JX_STRING);
+    ASSERT(jx_type(jx_back(jx)) == JX_STRING);
+    ASSERT(jx_type(jx_back(jx)) == JX_OBJECT);
+
+    ASSERT(jx_type(jx_right(jx)) == JX_SENTINEL);
+    ASSERT(jx_type(jx_back(jx)) == JX_OBJECT);
+    ASSERT(jx_type(jx_down(jx)) == JX_STRING);
+    ASSERT(jx_type(jx_right(jx)) == JX_STRING);
+    ASSERT(jx_type(jx_right(jx)) == JX_SENTINEL);
+    ASSERT(jx_type(jx_back(jx)) == JX_STRING);
+    ASSERT(jx_type(jx_up(jx)) == JX_OBJECT);
 #if 0
 
     it = jx_right(&jx, it);
