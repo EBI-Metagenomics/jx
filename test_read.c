@@ -20,6 +20,11 @@ int main(void)
     ASSERT(jx_errno(&jx) == 0);
     ASSERT(jx_type(it) == JX_OBJECT);
 
+    it = jx_right(&jx, it);
+    ASSERT(jx_type(it) == JX_UNDEF);
+    it = jx_back(&jx, it);
+    ASSERT(jx_type(it) == JX_OBJECT);
+
     it = jx_down(&jx, it);
     ASSERT(jx_type(it) == JX_STRING);
     it = jx_down(&jx, it);
@@ -43,7 +48,14 @@ int main(void)
     it = jx_up(&jx, it);
     ASSERT(jx_type(it) == JX_STRING);
 
-    // it = jx_right(&jx, it);
-    // ASSERT(jx_type(it) == JX_STRING);
+    it = jx_right(&jx, it);
+    ASSERT(jx_type(it) == JX_STRING);
+    ASSERT(jx_errno(&jx) == 0);
+    dup = jx_strdup(&jx, jx_as_string(&jx, it));
+    ASSERT(strcmp(dup, "age") == 0);
+    free(dup);
+
+    it = jx_down(&jx, it);
+    ASSERT(jx_type(it) == JX_NUMBER);
     return 0;
 }

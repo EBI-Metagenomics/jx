@@ -271,18 +271,16 @@ struct jx_it *jx_next(struct jx *jx, struct jx_it *it)
 
 struct jx_it *jx_right(struct jx *jx, struct jx_it *it)
 {
-    struct jx_it *next = NULL;
+    struct jx_it *next = jx_next(jx, it);
 
-    goto enter;
     while (jx_up(jx, next) != jx_up(jx, it))
     {
         if (next->type == JX_UNDEF)
         {
-            set_sentinel(next, 0);
+            set_sentinel(next, relative_index(jx, next, it_index(jx, it)));
             break;
         }
-    enter:
-        next = jx_next(jx, it);
+        next = jx_next(jx, next);
     }
     return next;
 }
