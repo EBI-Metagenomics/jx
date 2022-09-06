@@ -16,17 +16,25 @@ enum
     JX_NUMBER = 6,
 };
 
-struct jx_cursor
-{
-    char *json;
-};
-
 struct jx_parser
 {
     int bits;
+    int nnodes;
     unsigned pos;
     unsigned toknext;
     int toksuper;
+};
+
+struct jx_cursor
+{
+    char *json;
+    int pos;
+};
+
+struct jx_sentinel
+{
+    int type;
+    int prev;
 };
 
 struct jx_node
@@ -43,8 +51,9 @@ struct jx
 {
     union
     {
-        struct jx_cursor cursor;
         struct jx_parser parser;
+        struct jx_cursor cursor;
+        struct jx_sentinel sentinel;
         struct jx_node node;
     };
 };
@@ -54,19 +63,20 @@ struct jx
 void jx_init(struct jx[], int bits);
 int jx_parse(struct jx[], char *json);
 
-#if 0
 /* --query begin--------------------------------------------------------------*/
-int jx_errno(struct jx const *);
-int jx_type(struct jx_it const *);
+int jx_errno(void);
+void jx_clear(void);
+int jx_type(struct jx const[]);
 /* --query end----------------------------------------------------------------*/
 
 /* --navigation begin---------------------------------------------------------*/
-struct jx_it *jx_back(struct jx *, struct jx_it *);
-struct jx_it *jx_down(struct jx *, struct jx_it *);
-struct jx_it *jx_next(struct jx *, struct jx_it *);
-struct jx_it *jx_right(struct jx *, struct jx_it *);
-struct jx_it *jx_up(struct jx *, struct jx_it *);
+// struct jx_it *jx_back(struct jx *, struct jx_it *);
+// struct jx_it *jx_down(struct jx *, struct jx_it *);
+struct jx *jx_next(struct jx[]);
+// struct jx_it *jx_right(struct jx *, struct jx_it *);
+// struct jx_it *jx_up(struct jx *, struct jx_it *);
 
+#if 0
 struct jx_it *jx_array_at(struct jx *, struct jx_array *, unsigned idx);
 struct jx_it *jx_object_at(struct jx *, struct jx_object *, char const *key);
 

@@ -19,9 +19,9 @@ int main(void)
     jx_init(jx, 8);
     int rc = jx_parse(jx, json);
     ASSERT(rc == 5);
+    ASSERT(jx_errno() == 0);
+    ASSERT(jx_type(jx) == JX_OBJECT);
 #if 0
-    ASSERT(jx_errno(&jx) == 0);
-    ASSERT(jx_type(it) == JX_OBJECT);
 
     it = jx_right(&jx, it);
     ASSERT(jx_type(it) == JX_UNDEF);
@@ -41,11 +41,11 @@ int main(void)
     struct jx_string *str = jx_as_string(&jx, it);
     char *dup = jx_strdup(&jx, str);
     ASSERT(dup != NULL);
-    ASSERT(jx_errno(&jx) == 0);
+    ASSERT(jx_errno() == 0);
     ASSERT(strcmp(dup, "Jack") == 0);
     free(dup);
     jx_strcpy(&jx, person.name, str, PERSON_NAME_SIZE);
-    ASSERT(jx_errno(&jx) == 0);
+    ASSERT(jx_errno() == 0);
     ASSERT(strcmp(person.name, "Jack") == 0);
 
     it = jx_up(&jx, it);
@@ -53,7 +53,7 @@ int main(void)
 
     it = jx_right(&jx, it);
     ASSERT(jx_type(it) == JX_STRING);
-    ASSERT(jx_errno(&jx) == 0);
+    ASSERT(jx_errno() == 0);
     dup = jx_strdup(&jx, jx_as_string(&jx, it));
     ASSERT(strcmp(dup, "age") == 0);
     free(dup);
