@@ -10,6 +10,4 @@ struct jr_cursor
 };
 /* meld-cut-here */
 
-void __jr_cursor_init(struct jr_cursor *cursor, char *json);
-
 #endif

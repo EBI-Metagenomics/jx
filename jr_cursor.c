@@ -2,7 +2,7 @@
 /* meld-cut-here */
 #include <string.h>
 
-void __jr_cursor_init(struct jr_cursor *cursor, char *json)
+extern void jr_cursor_init(struct jr_cursor *cursor, char *json)
 {
     cursor->length = strlen(json);
     cursor->json = json;

@@ -79,6 +79,7 @@ static double strto_double(const char *restrict, char **restrict);
 extern void jr_parser_init(struct jr_parser *parser, int size);
 extern int jr_parser_parse(struct jr_parser *, size_t length, char *json,
                            int nnodes, struct jr_node *);
+extern void jr_cursor_init(struct jr_cursor *cursor, char *json);
 
 void __jr_init(struct jr jr[], int alloc_size)
 {
@@ -89,7 +90,7 @@ void __jr_init(struct jr jr[], int alloc_size)
 int jr_parse(struct jr jr[], char *json)
 {
     error = JR_OK;
-    __jr_cursor_init(cursor(jr), json);
+    jr_cursor_init(cursor(jr), json);
     struct jr_parser *p = get_parser(jr);
     struct jr_cursor *c = cursor(jr);
     int n = p->alloc_size - 2;

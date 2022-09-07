@@ -3,9 +3,9 @@
 JX_VERSION := 0.1.0
 JX_CFLAGS := $(CFLAGS) -std=gnu11 -Wall
 
-SRC := jr.c jr_node.c jr_parser.c jr_cursor.c jw.c
+SRC := jr.c jr_cursor.c jr_node.c jr_parser.c jw.c
 OBJ := $(SRC:.c=.o)
-HDR := jr.h jr_cursor.h jr_node.h jr_type.h zc_strto_static.h jr_compiler.h jr_error.h jr_parser.h jw.h
+HDR := jr_compiler.h jr_type.h jr_error.h jr_node.h jr_parser.h jr_cursor.h jr.h jw.h
 
 all: libjx.a check
 
@@ -31,7 +31,11 @@ check: test_read test_write
 	./test_read
 	./test_write
 
+dist: $(HDR) $(SRC)
+	./meld.sh hdr $(HDR) > jx.h
+	./meld.sh src $(SRC) > jx.c
+
 clean:
 	rm -f $(OBJ) libjx.a test_read test_read.o test_write test_write.o jx.c jx.h
 
-.PHONY: all check clean
+.PHONY: all check dist clean
