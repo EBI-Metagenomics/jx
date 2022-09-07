@@ -76,45 +76,5 @@ int main(void)
     ASSERT(jx_type(jx) == JX_OBJECT);
     ASSERT(!strcmp(jx_string_of(jx, "name"), "Jack"));
     ASSERT(jx_int64_of(jx, "age") == 27);
-#if 0
-
-    it = jx_right(&jx, it);
-    ASSERT(jx_type(it) == JX_SENTINEL);
-    it = jx_back(&jx, it);
-    ASSERT(jx_type(it) == JX_OBJECT);
-
-    it = jx_down(&jx, it);
-    ASSERT(jx_type(it) == JX_STRING);
-    it = jx_down(&jx, it);
-    ASSERT(jx_type(it) == JX_STRING);
-    it = jx_down(&jx, it);
-    ASSERT(jx_type(it) == JX_SENTINEL);
-    it = jx_down(&jx, it);
-    ASSERT(jx_type(it) == JX_SENTINEL);
-    it = jx_back(&jx, it);
-    ASSERT(jx_type(it) == JX_STRING);
-    struct jx_string *str = jx_as_string(&jx, it);
-    char *dup = jx_strdup(&jx, str);
-    ASSERT(dup != NULL);
-    ASSERT(jx_error() == 0);
-    ASSERT(strcmp(dup, "Jack") == 0);
-    free(dup);
-    jx_strcpy(&jx, person.name, str, PERSON_NAME_SIZE);
-    ASSERT(jx_error() == 0);
-    ASSERT(strcmp(person.name, "Jack") == 0);
-
-    it = jx_up(&jx, it);
-    ASSERT(jx_type(it) == JX_STRING);
-
-    it = jx_right(&jx, it);
-    ASSERT(jx_type(it) == JX_STRING);
-    ASSERT(jx_error() == 0);
-    dup = jx_strdup(&jx, jx_as_string(&jx, it));
-    ASSERT(strcmp(dup, "age") == 0);
-    free(dup);
-
-    it = jx_down(&jx, it);
-    ASSERT(jx_type(it) == JX_NUMBER);
-#endif
     return 0;
 }

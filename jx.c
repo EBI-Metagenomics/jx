@@ -20,16 +20,6 @@ enum
     NODE_OFFSET = 2,
 };
 
-enum
-{
-    /* Not enough tokens were provided */
-    JSMN_ERROR_NOMEM = -1,
-    /* Invalid character inside JSON string */
-    JSMN_ERROR_INVAL = -2,
-    /* The string is not a full JSON packet, more bytes expected */
-    JSMN_ERROR_PART = -3
-};
-
 /**
  * Create JSON parser over an array of tokens
  */
@@ -194,7 +184,7 @@ struct jx *jx_up(struct jx jx[])
     return jx;
 }
 
-struct jx *jx_array_at(struct jx jx[], int idx) {}
+// struct jx *jx_array_at(struct jx jx[], int idx) {}
 
 struct jx *jx_object_at(struct jx jx[], char const *key)
 {
@@ -332,12 +322,12 @@ static int jsmn_parse_primitive(struct jx_parser *parser, const char *js,
         if (js[parser->pos] < 32 || js[parser->pos] >= 127)
         {
             parser->pos = start;
-            return JSMN_ERROR_INVAL;
+            return JX_INVAL;
         }
     }
     /* In strict mode primitive must be followed by a comma/object/array */
     parser->pos = start;
-    return JSMN_ERROR_PART;
+    return JX_INVAL;
 
 found:
     if (tokens == NULL)
@@ -349,7 +339,7 @@ found:
     if (token == NULL)
     {
         parser->pos = start;
-        return JSMN_ERROR_NOMEM;
+        return JX_NOMEM;
     }
     jsmn_fill_token(token, JSMN_PRIMITIVE, start, parser->pos);
     token->parent = parser->toksuper;
@@ -386,7 +376,7 @@ static int jsmn_parse_string(struct jx_parser *parser, const char *js,
             if (token == NULL)
             {
                 parser->pos = start;
-                return JSMN_ERROR_NOMEM;
+                return JX_NOMEM;
             }
             jsmn_fill_token(token, JX_STRING, start + 1, parser->pos);
             token->parent = parser->toksuper;
@@ -424,7 +414,7 @@ static int jsmn_parse_string(struct jx_parser *parser, const char *js,
                           (js[parser->pos] >= 97 && js[parser->pos] <= 102)))
                     { /* a-f */
                         parser->pos = start;
-                        return JSMN_ERROR_INVAL;
+                        return JX_INVAL;
                     }
                     parser->pos++;
                 }
@@ -433,12 +423,12 @@ static int jsmn_parse_string(struct jx_parser *parser, const char *js,
             /* Unexpected symbol */
             default:
                 parser->pos = start;
-                return JSMN_ERROR_INVAL;
+                return JX_INVAL;
             }
         }
     }
     parser->pos = start;
-    return JSMN_ERROR_PART;
+    return JX_INVAL;
 }
 
 /**
@@ -470,7 +460,7 @@ int jsmn_parse(struct jx_parser *parser, const char *js, const size_t len,
             token = jsmn_alloc_token(parser, tokens, num_tokens);
             if (token == NULL)
             {
-                return JSMN_ERROR_NOMEM;
+                return JX_NOMEM;
             }
             if (parser->toksuper != -1)
             {
@@ -478,7 +468,7 @@ int jsmn_parse(struct jx_parser *parser, const char *js, const size_t len,
                 /* In strict mode an object or array can't become a key */
                 if (t->type == JX_OBJECT)
                 {
-                    return JSMN_ERROR_INVAL;
+                    return JX_INVAL;
                 }
                 t->size++;
                 token->parent = parser->toksuper;
@@ -496,7 +486,7 @@ int jsmn_parse(struct jx_parser *parser, const char *js, const size_t len,
             type = (c == '}' ? JX_OBJECT : JX_ARRAY);
             if (parser->toknext < 1)
             {
-                return JSMN_ERROR_INVAL;
+                return JX_INVAL;
             }
             token = &tokens[parser->toknext - 1];
             for (;;)
@@ -505,7 +495,7 @@ int jsmn_parse(struct jx_parser *parser, const char *js, const size_t len,
                 {
                     if (token->type != type)
                     {
-                        return JSMN_ERROR_INVAL;
+                        return JX_INVAL;
                     }
                     token->end = parser->pos + 1;
                     parser->toksuper = token->parent;
@@ -515,7 +505,7 @@ int jsmn_parse(struct jx_parser *parser, const char *js, const size_t len,
                 {
                     if (token->type != type || parser->toksuper == -1)
                     {
-                        return JSMN_ERROR_INVAL;
+                        return JX_INVAL;
                     }
                     break;
                 }
@@ -572,7 +562,7 @@ int jsmn_parse(struct jx_parser *parser, const char *js, const size_t len,
                 if (t->type == JX_OBJECT ||
                     (t->type == JX_STRING && t->size != 0))
                 {
-                    return JSMN_ERROR_INVAL;
+                    return JX_INVAL;
                 }
             }
             r = jsmn_parse_primitive(parser, js, len, tokens, num_tokens);
@@ -589,7 +579,7 @@ int jsmn_parse(struct jx_parser *parser, const char *js, const size_t len,
 
         /* Unexpected char in strict mode */
         default:
-            return JSMN_ERROR_INVAL;
+            return JX_INVAL;
         }
     }
 
@@ -600,7 +590,7 @@ int jsmn_parse(struct jx_parser *parser, const char *js, const size_t len,
             /* Unmatched opened object or array */
             if (tokens[i].start != -1 && tokens[i].end == -1)
             {
-                return JSMN_ERROR_PART;
+                return JX_INVAL;
             }
         }
     }

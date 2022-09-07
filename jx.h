@@ -5,7 +5,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-enum
+enum jx_type
 {
     JX_SENTINEL = 0,
     JX_OBJECT = 1,
@@ -14,6 +14,13 @@ enum
     JX_NULL = 4,
     JX_BOOL = 5,
     JX_NUMBER = 6,
+};
+
+enum jx_error
+{
+    JX_OK,
+    JX_INVAL,
+    JX_NOMEM,
 };
 
 struct jx_parser
@@ -67,7 +74,7 @@ struct jx *jx_next(struct jx[]);
 struct jx *jx_right(struct jx[]);
 struct jx *jx_up(struct jx[]);
 
-struct jx *jx_array_at(struct jx[], int idx);
+// struct jx *jx_array_at(struct jx[], int idx);
 struct jx *jx_object_at(struct jx[], char const *key);
 /* --navigation end-----------------------------------------------------------*/
 
