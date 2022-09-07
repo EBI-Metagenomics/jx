@@ -20,7 +20,7 @@ int main(void)
     jx_init(jx, 8);
     int rc = jx_parse(jx, json);
     ASSERT(rc == 5);
-    ASSERT(jx_errno() == 0);
+    ASSERT(jx_error() == 0);
 
     ASSERT(jx_type(jx) == JX_OBJECT);
     ASSERT(jx_type(jx_next(jx)) == JX_STRING);
@@ -54,20 +54,28 @@ int main(void)
     ASSERT(jx_type(jx_right(jx)) == JX_SENTINEL);
     ASSERT(jx_type(jx_back(jx)) == JX_STRING);
     ASSERT(jx_type(jx_up(jx)) == JX_OBJECT);
-    ASSERT(jx_errno() == 0);
+    ASSERT(jx_error() == 0);
     ASSERT(jx_type(jx_object_at(jx, "notfound")) == JX_OBJECT);
-    ASSERT(jx_errno() == EINVAL);
+    ASSERT(jx_error() == EINVAL);
     jx_clear();
+    ASSERT(jx_type(jx) == JX_OBJECT);
     ASSERT(!strcmp(jx_as_string(jx_object_at(jx, "name")), "Jack"));
-    ASSERT(jx_errno() == 0);
-    jx_back(jx);
-    jx_back(jx);
+    ASSERT(jx_error() == 0);
+    jx_up(jx);
+    jx_up(jx);
+    ASSERT(jx_type(jx) == JX_OBJECT);
     ASSERT(!strcmp(jx_as_string(jx_object_at(jx, "name")), "Jack"));
-    ASSERT(jx_errno() == 0);
-    jx_back(jx);
-    jx_back(jx);
+    ASSERT(jx_error() == 0);
+    jx_up(jx);
+    jx_up(jx);
+    ASSERT(jx_type(jx) == JX_OBJECT);
     ASSERT(jx_as_int(jx_object_at(jx, "age")) == 27);
-    ASSERT(jx_errno() == 0);
+    ASSERT(jx_error() == 0);
+    jx_up(jx);
+    jx_up(jx);
+    ASSERT(jx_type(jx) == JX_OBJECT);
+    ASSERT(!strcmp(jx_string_of(jx, "name"), "Jack"));
+    ASSERT(jx_int64_of(jx, "age") == 27);
 #if 0
 
     it = jx_right(&jx, it);
@@ -88,11 +96,11 @@ int main(void)
     struct jx_string *str = jx_as_string(&jx, it);
     char *dup = jx_strdup(&jx, str);
     ASSERT(dup != NULL);
-    ASSERT(jx_errno() == 0);
+    ASSERT(jx_error() == 0);
     ASSERT(strcmp(dup, "Jack") == 0);
     free(dup);
     jx_strcpy(&jx, person.name, str, PERSON_NAME_SIZE);
-    ASSERT(jx_errno() == 0);
+    ASSERT(jx_error() == 0);
     ASSERT(strcmp(person.name, "Jack") == 0);
 
     it = jx_up(&jx, it);
@@ -100,7 +108,7 @@ int main(void)
 
     it = jx_right(&jx, it);
     ASSERT(jx_type(it) == JX_STRING);
-    ASSERT(jx_errno() == 0);
+    ASSERT(jx_error() == 0);
     dup = jx_strdup(&jx, jx_as_string(&jx, it));
     ASSERT(strcmp(dup, "age") == 0);
     free(dup);

@@ -115,7 +115,7 @@ int jx_parse(struct jx jx[], char *json)
     return rc;
 }
 
-int jx_errno(void) { return errno_local; }
+int jx_error(void) { return errno_local; }
 
 void jx_clear(void) { errno_local = 0; }
 
@@ -219,9 +219,41 @@ struct jx *jx_object_at(struct jx jx[], char const *key)
     return jx_down(jx);
 }
 
+static inline char *empty_string(struct jx jx[])
+{
+    return &cursor(jx).json[cursor(jx).length];
+}
+
+char *jx_string_of(struct jx jx[], char const *key)
+{
+    if (errno_local) return empty_string(jx);
+
+    jx_object_at(jx, key);
+    cursor(jx).json[cnode(jx).end] = '\0';
+    char *str = &cursor(jx).json[cnode(jx).start];
+    jx_up(jx);
+    jx_up(jx);
+    return str;
+}
+
+int64_t jx_int64_of(struct jx jx[], char const *key)
+{
+    if (errno_local) return 0;
+
+    int save_errno = errno;
+    jx_object_at(jx, key);
+    cursor(jx).json[cnode(jx).end] = '\0';
+    int64_t val = zc_strto_int64(&cursor(jx).json[cnode(jx).start], NULL, 10);
+    errno_local = errno;
+    errno = save_errno;
+    jx_up(jx);
+    jx_up(jx);
+    return val;
+}
+
 char *jx_as_string(struct jx jx[])
 {
-    if (errno_local) return &cursor(jx).json[cursor(jx).length];
+    if (errno_local) return empty_string(jx);
 
     cursor(jx).json[cnode(jx).end] = '\0';
     return &cursor(jx).json[cnode(jx).start];

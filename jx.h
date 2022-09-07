@@ -56,12 +56,9 @@ struct jx
 
 void jx_init(struct jx[], int bits);
 int jx_parse(struct jx[], char *json);
-
-/* --query begin--------------------------------------------------------------*/
-int jx_errno(void);
+int jx_error(void);
 void jx_clear(void);
 int jx_type(struct jx const[]);
-/* --query end----------------------------------------------------------------*/
 
 /* --navigation begin---------------------------------------------------------*/
 struct jx *jx_back(struct jx[]);
@@ -73,6 +70,9 @@ struct jx *jx_up(struct jx[]);
 struct jx *jx_array_at(struct jx[], int idx);
 struct jx *jx_object_at(struct jx[], char const *key);
 /* --navigation end-----------------------------------------------------------*/
+
+char *jx_string_of(struct jx[], char const *key);
+int64_t jx_int64_of(struct jx[], char const *key);
 
 #if 0
 /* --casting begin------------------------------------------------------------*/
