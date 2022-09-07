@@ -70,7 +70,7 @@ static void test_person(void)
     ASSERT(jx_type(jx_up(jx)) == JX_OBJECT);
     ASSERT(jx_error() == 0);
     ASSERT(jx_type(jx_object_at(jx, "notfound")) == JX_OBJECT);
-    ASSERT(jx_error() == JX_INVAL);
+    ASSERT(jx_error() == JX_NOTFOUND);
     jx_clear();
     ASSERT(jx_type(jx) == JX_OBJECT);
     ASSERT(!strcmp(jx_as_string(jx_object_at(jx, "name")), "Jack"));
@@ -126,5 +126,5 @@ static void test_array(void)
     ASSERT(jx_type(jx_up(jx)) == JX_ARRAY);
 
     ASSERT(jx_type(jx_array_at(jx, 3)) == JX_ARRAY);
-    ASSERT(jx_error() == JX_INVAL);
+    ASSERT(jx_error() == JX_OUTRANGE);
 }

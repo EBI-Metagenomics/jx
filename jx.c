@@ -160,19 +160,13 @@ struct jx *jx_array_at(struct jx jx[], int idx)
     jx_down(jx);
     for (int i = 0; i < idx; ++i)
     {
-        if (jx_type(jx) == JX_SENTINEL)
-        {
-            rollback(jx, pos);
-            errno_local = JX_INVAL;
-            return jx;
-        }
+        if (jx_type(jx) == JX_SENTINEL) break;
         jx_right(jx);
     }
     if (jx_type(jx) == JX_SENTINEL)
     {
         rollback(jx, pos);
-        errno_local = JX_INVAL;
-        return jx;
+        errno_local = JX_OUTRANGE;
     }
     return jx;
 }
@@ -192,7 +186,7 @@ struct jx *jx_object_at(struct jx jx[], char const *key)
         if (jx_type(jx) == JX_SENTINEL)
         {
             rollback(jx, pos);
-            errno_local = JX_INVAL;
+            errno_local = JX_NOTFOUND;
             return jx;
         }
         jx_right(jx);
