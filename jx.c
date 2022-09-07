@@ -55,29 +55,20 @@ static inline char *empty_string(struct jx jx[])
 {
     return &cursor(jx)->json[cursor(jx)->length];
 }
+static void sentinel_init(struct jx jx[]);
 
 void __jx_init(struct jx jx[], int size)
 {
-    parser_init(get_parser(jx), size);
+    __jx_parser_init(get_parser(jx), size);
     cursor(jx)->pos = 0;
-}
-
-static void sentinel_init(struct jx jx[])
-{
-    sentinel(jx)->type = JX_SENTINEL;
-    sentinel(jx)->start = 0;
-    sentinel(jx)->end = 1;
-    sentinel(jx)->size = 0;
-    sentinel(jx)->parent = get_parser(jx)->count;
-    sentinel(jx)->prev = get_parser(jx)->count;
 }
 
 int jx_parse(struct jx jx[], char *json)
 {
-    jx_cursor_init(cursor(jx), json);
+    __jx_cursor_init(cursor(jx), json);
     struct jx_parser *parser = get_parser(jx);
-    int rc = parser_parse(parser, cursor(jx)->length, cursor(jx)->json,
-                          parser->size, nodes(jx));
+    int rc = __jx_parser_parse(parser, cursor(jx)->length, cursor(jx)->json,
+                               parser->size, nodes(jx));
     if (rc) return rc;
     sentinel_init(jx);
     if (parser->count > 0) cnode(jx)->parent = -1;
@@ -256,4 +247,14 @@ int jx_as_int(struct jx jx[])
     int val = zc_strto_int(cstring(jx), NULL, 10);
     input_errno();
     return val;
+}
+
+static void sentinel_init(struct jx jx[])
+{
+    sentinel(jx)->type = JX_SENTINEL;
+    sentinel(jx)->start = 0;
+    sentinel(jx)->end = 1;
+    sentinel(jx)->size = 0;
+    sentinel(jx)->parent = get_parser(jx)->count;
+    sentinel(jx)->prev = get_parser(jx)->count;
 }

@@ -14,8 +14,8 @@ struct jx_parser
 
 struct jx_node;
 
-void parser_init(struct jx_parser *parser, int size);
-int parser_parse(struct jx_parser *, size_t length, char *json, int nnodes,
-                 struct jx_node *);
+void __jx_parser_init(struct jx_parser *parser, int size);
+int __jx_parser_parse(struct jx_parser *, size_t length, char *json, int nnodes,
+                      struct jx_node *);
 
 #endif

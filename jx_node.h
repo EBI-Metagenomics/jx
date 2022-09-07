@@ -13,7 +13,7 @@ struct jx_node
 
 struct jx_parser;
 
-struct jx_node *node_alloc(struct jx_parser *parser, int nnodes,
-                           struct jx_node *nodes);
+struct jx_node *__jx_node_alloc(struct jx_parser *parser, int nnodes,
+                                struct jx_node *nodes);
 
 #endif
