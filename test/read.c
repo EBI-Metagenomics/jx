@@ -13,14 +13,6 @@ static char empty_object_json[] = "{}";
 static char array_array_json[] = "[[true, false], [null, -23], [-1.0]]";
 static char array_string_json[] = "[\"true\"]";
 
-#define PERSON_NAME_SIZE 32
-
-static struct
-{
-    char name[PERSON_NAME_SIZE];
-    int age;
-} person = {0};
-
 static void test_person(void);
 static void test_unmatched(void);
 static void test_array(void);
@@ -98,15 +90,15 @@ static void test_person(void)
     jr_up(jr);
     jr_up(jr);
     ASSERT(jr_type(jr) == JR_OBJECT);
-    ASSERT(jr_as_int(jr_object_at(jr, "age")) == 27);
+    ASSERT(jr_as_long(jr_object_at(jr, "age")) == 27);
     ASSERT(jr_error() == JR_OK);
     jr_up(jr);
     jr_up(jr);
     ASSERT(jr_type(jr) == JR_OBJECT);
     ASSERT(!strcmp(jr_string_of(jr, "name"), "Jack"));
-    ASSERT(jr_int_of(jr, "age") == 27);
     ASSERT(jr_long_of(jr, "age") == 27);
-    ASSERT(jr_uint_of(jr, "age") == 27);
+    ASSERT(jr_long_of(jr, "age") == 27);
+    ASSERT(jr_ulong_of(jr, "age") == 27);
     ASSERT(jr_ulong_of(jr, "age") == 27);
 }
 
@@ -185,7 +177,7 @@ static void test_array_array(void)
     ASSERT(jr_type(jr_down(jr)) == JR_NULL);
     ASSERT(jr_as_null(jr) == NULL);
     ASSERT(jr_type(jr_next(jr)) == JR_NUMBER);
-    ASSERT(jr_as_int(jr) == -23);
+    ASSERT(jr_as_long(jr) == -23);
     ASSERT(jr_type(jr_up(jr)) == JR_ARRAY);
     ASSERT(jr_type(jr_up(jr)) == JR_ARRAY);
     ASSERT(jr_type(jr_array_at(jr, 2)) == JR_ARRAY);

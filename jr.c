@@ -235,18 +235,6 @@ long jr_long_of(struct jr jr[], char const *key)
     return val;
 }
 
-int jr_int_of(struct jr jr[], char const *key)
-{
-    if (jr_type(jr) != JR_OBJECT) error = JR_INVAL;
-    if (error) return 0;
-
-    int pos = cursor(jr)->pos;
-    jr_object_at(jr, key);
-    int val = jr_as_int(jr);
-    rollback(jr, pos);
-    return val;
-}
-
 unsigned long jr_ulong_of(struct jr jr[], char const *key)
 {
     if (jr_type(jr) != JR_OBJECT) error = JR_INVAL;
@@ -255,18 +243,6 @@ unsigned long jr_ulong_of(struct jr jr[], char const *key)
     int pos = cursor(jr)->pos;
     jr_object_at(jr, key);
     unsigned long val = jr_as_ulong(jr);
-    rollback(jr, pos);
-    return val;
-}
-
-unsigned int jr_uint_of(struct jr jr[], char const *key)
-{
-    if (jr_type(jr) != JR_OBJECT) error = JR_INVAL;
-    if (error) return 0;
-
-    int pos = cursor(jr)->pos;
-    jr_object_at(jr, key);
-    unsigned int val = jr_as_uint(jr);
     rollback(jr, pos);
     return val;
 }
@@ -305,17 +281,6 @@ long jr_as_long(struct jr jr[])
     return val;
 }
 
-int jr_as_int(struct jr jr[])
-{
-    if (jr_type(jr) != JR_NUMBER) error = JR_INVAL;
-    if (error) return 0;
-
-    delimit(jr);
-    int val = zc_strto_int(cstring(jr), NULL, 10);
-    input_errno();
-    return val;
-}
-
 unsigned long jr_as_ulong(struct jr jr[])
 {
     if (jr_type(jr) != JR_NUMBER) error = JR_INVAL;
@@ -323,17 +288,6 @@ unsigned long jr_as_ulong(struct jr jr[])
 
     delimit(jr);
     unsigned long val = zc_strto_ulong(cstring(jr), NULL, 10);
-    input_errno();
-    return val;
-}
-
-unsigned int jr_as_uint(struct jr jr[])
-{
-    if (jr_type(jr) != JR_NUMBER) error = JR_INVAL;
-    if (error) return 0;
-
-    delimit(jr);
-    unsigned int val = zc_strto_uint(cstring(jr), NULL, 10);
     input_errno();
     return val;
 }

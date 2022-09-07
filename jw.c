@@ -3,6 +3,7 @@
 /* meld-cut-here */
 static unsigned put_unquoted_cstr(char buf[], char const *str);
 static unsigned itoa_rev(char buf[], long i);
+static unsigned utoa_rev(char buf[], unsigned long i);
 static void reverse(char buf[], int size);
 
 unsigned jw_bool(char buf[], bool x)
@@ -10,16 +11,23 @@ unsigned jw_bool(char buf[], bool x)
     return put_unquoted_cstr(buf, x ? "true" : "false");
 }
 
-unsigned jw_int(char buf[], long x)
+unsigned jw_long(char buf[], long x)
 {
     unsigned size = itoa_rev(buf, x);
     reverse(buf, size);
     return size;
 }
 
+unsigned jw_ulong(char buf[], unsigned long x)
+{
+    unsigned size = utoa_rev(buf, x);
+    reverse(buf, size);
+    return size;
+}
+
 unsigned jw_null(char buf[]) { return put_unquoted_cstr(buf, "null"); }
 
-unsigned jw_str(char buf[], char const x[])
+unsigned jw_string(char buf[], char const x[])
 {
     buf[0] = '\"';
     unsigned size = put_unquoted_cstr(buf + 1, x);
@@ -87,6 +95,21 @@ static unsigned itoa_rev(char buf[], long i)
     if (neg == -1)
     {
         *dst++ = '-';
+    }
+    return (unsigned)(dst - buf);
+}
+
+static unsigned utoa_rev(char buf[], unsigned long i)
+{
+    char *dst = buf;
+    if (i == 0)
+    {
+        *dst++ = '0';
+    }
+    while (i)
+    {
+        *dst++ = (char)('0' + (i % 10));
+        i /= 10;
     }
     return (unsigned)(dst - buf);
 }

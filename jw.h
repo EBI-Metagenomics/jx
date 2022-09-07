@@ -6,8 +6,9 @@
 
 unsigned jw_bool(char buf[], bool x);
 unsigned jw_long(char buf[], long x);
+unsigned jw_ulong(char buf[], unsigned long x);
 unsigned jw_null(char buf[]);
-unsigned jw_str(char buf[], char const x[]);
+unsigned jw_string(char buf[], char const x[]);
 
 unsigned jw_object_open(char buf[]);
 unsigned jw_object_close(char buf[]);
