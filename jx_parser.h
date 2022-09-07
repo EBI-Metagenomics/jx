@@ -5,7 +5,7 @@
 
 struct jx_parser
 {
-    int size;
+    int alloc_size;
     int count;
     unsigned pos;
     unsigned toknext;

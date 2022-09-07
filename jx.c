@@ -68,7 +68,7 @@ int jx_parse(struct jx jx[], char *json)
     __jx_cursor_init(cursor(jx), json);
     struct jx_parser *parser = get_parser(jx);
     int rc = __jx_parser_parse(parser, cursor(jx)->length, cursor(jx)->json,
-                               parser->size, nodes(jx));
+                               parser->alloc_size, nodes(jx));
     if (rc) return rc;
     sentinel_init(jx);
     if (parser->count > 0) cnode(jx)->parent = -1;

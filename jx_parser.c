@@ -16,7 +16,7 @@ static void fill_node(struct jx_node *token, const int type, const int start,
 
 void __jx_parser_init(struct jx_parser *parser, int size)
 {
-    parser->size = size;
+    parser->alloc_size = size;
     parser->count = 0;
     parser->pos = 0;
     parser->toknext = 0;
