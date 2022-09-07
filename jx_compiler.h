@@ -1,5 +1,5 @@
-#ifndef COMPILER_H
-#define COMPILER_H
+#ifndef JX_COMPILER_H
+#define JX_COMPILER_H
 
 // Source: https://stackoverflow.com/a/18298965
 #ifndef thread_local
@@ -14,6 +14,11 @@
 #else
 #error "Cannot define thread_local"
 #endif
+#endif
+
+#ifdef NULL
+#undef NULL
+#define NULL ((void*)0)
 #endif
 
 #endif

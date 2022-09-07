@@ -1,53 +1,13 @@
 #ifndef JX_H
 #define JX_H
 
+#include "jx_cursor.h"
+#include "jx_node.h"
+#include "jx_parser.h"
+#include "jx_type.h"
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-
-enum jx_type
-{
-    JX_SENTINEL = 0,
-    JX_OBJECT = 1,
-    JX_ARRAY = 2,
-    JX_STRING = 3,
-    JX_NULL = 4,
-    JX_BOOL = 5,
-    JX_NUMBER = 6,
-};
-
-enum jx_error
-{
-    JX_OK,
-    JX_INVAL,
-    JX_NOMEM,
-};
-
-struct jx_parser
-{
-    int bits;
-    int nnodes;
-    unsigned pos;
-    unsigned toknext;
-    int toksuper;
-};
-
-struct jx_cursor
-{
-    int length;
-    char *json;
-    int pos;
-};
-
-struct jx_node
-{
-    int type;
-    int start;
-    int end;
-    int size;
-    int parent;
-    int prev;
-};
 
 struct jx
 {
