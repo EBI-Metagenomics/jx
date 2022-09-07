@@ -9,7 +9,7 @@
 #include <stddef.h>
 #include <string.h>
 
-static thread_local int errno_local = 0;
+static thread_local int error = 0;
 
 enum offset
 {
@@ -69,9 +69,9 @@ int jx_parse(struct jx jx[], char *json)
     return rc;
 }
 
-int jx_error(void) { return errno_local; }
+int jx_error(void) { return error; }
 
-void jx_clear(void) { errno_local = 0; }
+void jx_clear(void) { error = 0; }
 
 int jx_type(struct jx const jx[])
 {
@@ -152,7 +152,7 @@ struct jx *jx_array_at(struct jx jx[], int idx)
 {
     if (jx_type(jx) != JX_ARRAY)
     {
-        errno_local = JX_INVAL;
+        error = JX_INVAL;
         return jx;
     }
 
@@ -166,7 +166,7 @@ struct jx *jx_array_at(struct jx jx[], int idx)
     if (jx_type(jx) == JX_SENTINEL)
     {
         rollback(jx, pos);
-        errno_local = JX_OUTRANGE;
+        error = JX_OUTRANGE;
     }
     return jx;
 }
@@ -175,7 +175,7 @@ struct jx *jx_object_at(struct jx jx[], char const *key)
 {
     if (jx_type(jx) != JX_OBJECT)
     {
-        errno_local = JX_INVAL;
+        error = JX_INVAL;
         return jx;
     }
 
@@ -186,7 +186,7 @@ struct jx *jx_object_at(struct jx jx[], char const *key)
         if (jx_type(jx) == JX_SENTINEL)
         {
             rollback(jx, pos);
-            errno_local = JX_NOTFOUND;
+            error = JX_NOTFOUND;
             return jx;
         }
         jx_right(jx);
@@ -201,7 +201,7 @@ static inline char *empty_string(struct jx jx[])
 
 char *jx_string_of(struct jx jx[], char const *key)
 {
-    if (errno_local) return empty_string(jx);
+    if (error) return empty_string(jx);
 
     jx_object_at(jx, key);
     cursor(jx)->json[cnode(jx)->end] = '\0';
@@ -213,13 +213,13 @@ char *jx_string_of(struct jx jx[], char const *key)
 
 int64_t jx_int64_of(struct jx jx[], char const *key)
 {
-    if (errno_local) return 0;
+    if (error) return 0;
 
     int save_errno = errno;
     jx_object_at(jx, key);
     cursor(jx)->json[cnode(jx)->end] = '\0';
     int64_t val = zc_strto_int64(&cursor(jx)->json[cnode(jx)->start], NULL, 10);
-    errno_local = errno;
+    error = errno;
     errno = save_errno;
     jx_up(jx);
     jx_up(jx);
@@ -228,7 +228,7 @@ int64_t jx_int64_of(struct jx jx[], char const *key)
 
 char *jx_as_string(struct jx jx[])
 {
-    if (errno_local) return empty_string(jx);
+    if (error) return empty_string(jx);
 
     cursor(jx)->json[cnode(jx)->end] = '\0';
     return &cursor(jx)->json[cnode(jx)->start];
@@ -236,11 +236,11 @@ char *jx_as_string(struct jx jx[])
 
 int jx_as_int(struct jx jx[])
 {
-    if (errno_local) return 0;
+    if (error) return 0;
 
     cursor(jx)->json[cnode(jx)->end] = '\0';
     int val = zc_strto_int(&cursor(jx)->json[cnode(jx)->start], NULL, 10);
-    errno_local = errno;
+    error = errno;
     errno = 0;
     return val;
 }
