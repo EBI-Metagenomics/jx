@@ -1,7 +1,9 @@
 .POSIX:
 
 JX_VERSION := 0.1.0
-JX_CFLAGS := $(CFLAGS) -std=gnu11 -Wall
+
+CC ?= gcc
+CFLAGS := $(CFLAGS) -std=gnu11 -Wall
 
 SRC := jr.c jr_cursor.c jr_node.c jr_parser.c jw.c
 OBJ := $(SRC:.c=.o)
@@ -16,21 +18,21 @@ jx.c: $(SRC) | jx.h
 	./meld.sh src $^ > jx.c
 
 jx.o: jx.c
-	$(CC) $(JX_CFLAGS) -c $<
+	$(CC) $(CFLAGS) -c $<
 
 meld: jx.h jx.c
 
 test_read.o: test/read.c | meld
-	$(CC) $(JX_CFLAGS) -I. -c $< -o $@
+	$(CC) $(CFLAGS) -I. -c $< -o $@
 
 test_read: test_read.o jx.o
-	$(CC) $(JX_CFLAGS) $^ -o $@
+	$(CC) $(CFLAGS) $^ -o $@
 
 test_write.o: test/write.c | meld
-	$(CC) $(JX_CFLAGS) -I. -c $< -o $@
+	$(CC) $(CFLAGS) -I. -c $< -o $@
 
 test_write: test_write.o jx.o
-	$(CC) $(JX_CFLAGS) $^ -o $@
+	$(CC) $(CFLAGS) $^ -o $@
 
 check: test_read test_write
 	./test_read
