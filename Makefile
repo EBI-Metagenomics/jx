@@ -7,35 +7,45 @@ SRC := jr.c jr_cursor.c jr_node.c jr_parser.c jw.c
 OBJ := $(SRC:.c=.o)
 HDR := jr_compiler.h jr_type.h jr_error.h jr_node.h jr_parser.h jr_cursor.h jr.h jw.h
 
-all: libjx.a check
+all: meld check
 
-%.o: %.c $(HDR)
+jx.h: $(HDR)
+	./meld.sh hdr $^ > jx.h
+
+jx.c: $(SRC) | jx.h
+	./meld.sh src $^ > jx.c
+
+jx.o: jx.c
 	$(CC) $(JX_CFLAGS) -c $<
 
-libjx.a: $(OBJ)
-	ar rcs $@ $^
+meld: jx.h jx.c
 
-test_read.o: test/read.c
-	$(CC) $(JX_CFLAGS) -I. -c test/read.c -o test_read.o
+test_read.o: test/read.c | meld
+	$(CC) $(JX_CFLAGS) -I. -c $< -o $@
 
-test_read: test_read.o libjx.a
-	$(CC) -o $@ $< -L. -ljx
+test_read: test_read.o jx.o
+	$(CC) $(JX_CFLAGS) $^ -o $@
 
-test_write.o: test/write.c
-	$(CC) $(JX_CFLAGS) -I. -c test/write.c -o test_write.o
+test_write.o: test/write.c | meld
+	$(CC) $(JX_CFLAGS) -I. -c $< -o $@
 
-test_write: test_write.o libjx.a
-	$(CC) -o $@ $< -L. -ljx
+test_write: test_write.o jx.o
+	$(CC) $(JX_CFLAGS) $^ -o $@
 
 check: test_read test_write
 	./test_read
 	./test_write
 
-dist: $(HDR) $(SRC)
-	./meld.sh hdr $(HDR) > jx.h
-	./meld.sh src $(SRC) > jx.c
+dist: clean meld
+	mkdir -p jx-$(JX_VERSION)
+	cp -R README.md LICENSE jx.h jx.c jx-$(JX_VERSION)
+	tar -cf - jx-$(JX_VERSION) | gzip > jx-$(JX_VERSION).tar.gz
+	rm -rf jx-$(JX_VERSION)
 
-clean:
-	rm -f $(OBJ) libjx.a test_read test_read.o test_write test_write.o jx.c jx.h
+distclean:
+	rm -f jx-$(JX_VERSION).tar.gz
 
-.PHONY: all check dist clean
+clean: distclean
+	rm -f $(OBJ) test_read test_write *.o jx.c jx.h
+
+.PHONY: all check meld dist distclean clean 
