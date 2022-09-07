@@ -8,30 +8,17 @@
 
 static thread_local int errno_local = 0;
 
-enum
-{
-    JSMN_PRIMITIVE = 1 << 3
-};
-
-enum
+enum offset
 {
     PARSER_OFFSET = 0,
     CURSOR_OFFSET = 1,
     NODE_OFFSET = 2,
 };
 
-/**
- * Create JSON parser over an array of tokens
- */
-void jsmn_init(struct jx_parser *parser);
-
-/**
- * Run JSON parser. It parses a JSON data string into and array of tokens, each
- * describing
- * a single JSON object.
- */
+static void parser_init(struct jx_parser *parser, int bits);
 int jsmn_parse(struct jx_parser *parser, const char *js, const size_t len,
-               struct jx_node *tokens, const unsigned int num_tokens);
+               struct jx_node *tokens, int nnodes);
+static struct jx_node *alloc_node(struct jx_parser *, int, struct jx_node[]);
 
 #define PARSER(jx) ((jx)[PARSER_OFFSET].parser)
 #define cursor(jx) ((jx)[CURSOR_OFFSET].cursor)
@@ -41,43 +28,37 @@ int jsmn_parse(struct jx_parser *parser, const char *js, const size_t len,
 
 void jx_init(struct jx jx[], int bits)
 {
-    PARSER(jx).bits = bits;
+    parser_init(&PARSER(jx), bits);
     cursor(jx).pos = 0;
 }
 
-static void convert_types(struct jx jx[])
+static int primitive_type(char c)
 {
-    for (int i = 0; i < PARSER(jx).nnodes; ++i)
+    switch (c)
     {
-        if (nodes(jx)[i].type == JSMN_PRIMITIVE)
-        {
-            switch (cursor(jx).json[nodes(jx)[i].start])
-            {
-            case '-':
-            case '0':
-            case '1':
-            case '2':
-            case '3':
-            case '4':
-            case '5':
-            case '6':
-            case '7':
-            case '8':
-            case '9':
-                nodes(jx)[i].type = JX_NUMBER;
-                break;
-            case 't':
-            case 'f':
-                nodes(jx)[i].type = JX_BOOL;
-                break;
-            case 'n':
-                nodes(jx)[i].type = JX_NULL;
-                break;
-            default:
-                assert(false);
-            }
-        }
+    case '-':
+    case '0':
+    case '1':
+    case '2':
+    case '3':
+    case '4':
+    case '5':
+    case '6':
+    case '7':
+    case '8':
+    case '9':
+        return JX_NUMBER;
+    case 't':
+    case 'f':
+        return JX_BOOL;
+        break;
+    case 'n':
+        return JX_NULL;
+        break;
+    default:
+        assert(false);
     }
+    assert(false);
 }
 
 static void sentinel_init(struct jx jx[])
@@ -100,7 +81,6 @@ int jx_parse(struct jx jx[], char *json)
     if (rc < 0) return rc;
     parser->nnodes = rc;
     sentinel_init(jx);
-    convert_types(jx);
     if (parser->nnodes > 0) cnode(jx).parent = -1;
     return rc;
 }
@@ -261,25 +241,6 @@ int jx_as_int(struct jx jx[])
 }
 
 /**
- * Allocates a fresh unused token from the token pool.
- */
-static struct jx_node *jsmn_alloc_token(struct jx_parser *parser,
-                                        struct jx_node *tokens,
-                                        const size_t num_tokens)
-{
-    struct jx_node *tok;
-    if (parser->toknext >= num_tokens)
-    {
-        return NULL;
-    }
-    tok = &tokens[parser->toknext++];
-    tok->start = tok->end = -1;
-    tok->size = 0;
-    tok->parent = -1;
-    return tok;
-}
-
-/**
  * Fills token type and boundaries.
  */
 static void jsmn_fill_token(struct jx_node *token, const int type,
@@ -335,13 +296,13 @@ found:
         parser->pos--;
         return 0;
     }
-    token = jsmn_alloc_token(parser, tokens, num_tokens);
+    token = alloc_node(parser, num_tokens, tokens);
     if (token == NULL)
     {
         parser->pos = start;
         return JX_NOMEM;
     }
-    jsmn_fill_token(token, JSMN_PRIMITIVE, start, parser->pos);
+    jsmn_fill_token(token, primitive_type(js[start]), start, parser->pos);
     token->parent = parser->toksuper;
     parser->pos--;
     return 0;
@@ -372,7 +333,7 @@ static int jsmn_parse_string(struct jx_parser *parser, const char *js,
             {
                 return 0;
             }
-            token = jsmn_alloc_token(parser, tokens, num_tokens);
+            token = alloc_node(parser, num_tokens, tokens);
             if (token == NULL)
             {
                 parser->pos = start;
@@ -431,11 +392,8 @@ static int jsmn_parse_string(struct jx_parser *parser, const char *js,
     return JX_INVAL;
 }
 
-/**
- * Parse JSON string and fill tokens.
- */
 int jsmn_parse(struct jx_parser *parser, const char *js, const size_t len,
-               struct jx_node *tokens, const unsigned int num_tokens)
+               struct jx_node *nodes, int nnodes)
 {
     int r;
     int i;
@@ -453,18 +411,18 @@ int jsmn_parse(struct jx_parser *parser, const char *js, const size_t len,
         case '{':
         case '[':
             count++;
-            if (tokens == NULL)
+            if (nodes == NULL)
             {
                 break;
             }
-            token = jsmn_alloc_token(parser, tokens, num_tokens);
+            token = alloc_node(parser, nnodes, nodes);
             if (token == NULL)
             {
                 return JX_NOMEM;
             }
             if (parser->toksuper != -1)
             {
-                struct jx_node *t = &tokens[parser->toksuper];
+                struct jx_node *t = &nodes[parser->toksuper];
                 /* In strict mode an object or array can't become a key */
                 if (t->type == JX_OBJECT)
                 {
@@ -479,7 +437,7 @@ int jsmn_parse(struct jx_parser *parser, const char *js, const size_t len,
             break;
         case '}':
         case ']':
-            if (tokens == NULL)
+            if (nodes == NULL)
             {
                 break;
             }
@@ -488,7 +446,7 @@ int jsmn_parse(struct jx_parser *parser, const char *js, const size_t len,
             {
                 return JX_INVAL;
             }
-            token = &tokens[parser->toknext - 1];
+            token = &nodes[parser->toknext - 1];
             for (;;)
             {
                 if (token->start != -1 && token->end == -1)
@@ -509,19 +467,19 @@ int jsmn_parse(struct jx_parser *parser, const char *js, const size_t len,
                     }
                     break;
                 }
-                token = &tokens[token->parent];
+                token = &nodes[token->parent];
             }
             break;
         case '\"':
-            r = jsmn_parse_string(parser, js, len, tokens, num_tokens);
+            r = jsmn_parse_string(parser, js, len, nodes, nnodes);
             if (r < 0)
             {
                 return r;
             }
             count++;
-            if (parser->toksuper != -1 && tokens != NULL)
+            if (parser->toksuper != -1 && nodes != NULL)
             {
-                tokens[parser->toksuper].size++;
+                nodes[parser->toksuper].size++;
             }
             break;
         case '\t':
@@ -533,11 +491,11 @@ int jsmn_parse(struct jx_parser *parser, const char *js, const size_t len,
             parser->toksuper = parser->toknext - 1;
             break;
         case ',':
-            if (tokens != NULL && parser->toksuper != -1 &&
-                tokens[parser->toksuper].type != JX_ARRAY &&
-                tokens[parser->toksuper].type != JX_OBJECT)
+            if (nodes != NULL && parser->toksuper != -1 &&
+                nodes[parser->toksuper].type != JX_ARRAY &&
+                nodes[parser->toksuper].type != JX_OBJECT)
             {
-                parser->toksuper = tokens[parser->toksuper].parent;
+                parser->toksuper = nodes[parser->toksuper].parent;
             }
             break;
         /* In strict mode primitives are: numbers and booleans */
@@ -556,24 +514,24 @@ int jsmn_parse(struct jx_parser *parser, const char *js, const size_t len,
         case 'f':
         case 'n':
             /* And they must not be keys of the object */
-            if (tokens != NULL && parser->toksuper != -1)
+            if (nodes != NULL && parser->toksuper != -1)
             {
-                const struct jx_node *t = &tokens[parser->toksuper];
+                const struct jx_node *t = &nodes[parser->toksuper];
                 if (t->type == JX_OBJECT ||
                     (t->type == JX_STRING && t->size != 0))
                 {
                     return JX_INVAL;
                 }
             }
-            r = jsmn_parse_primitive(parser, js, len, tokens, num_tokens);
+            r = jsmn_parse_primitive(parser, js, len, nodes, nnodes);
             if (r < 0)
             {
                 return r;
             }
             count++;
-            if (parser->toksuper != -1 && tokens != NULL)
+            if (parser->toksuper != -1 && nodes != NULL)
             {
-                tokens[parser->toksuper].size++;
+                nodes[parser->toksuper].size++;
             }
             break;
 
@@ -583,12 +541,12 @@ int jsmn_parse(struct jx_parser *parser, const char *js, const size_t len,
         }
     }
 
-    if (tokens != NULL)
+    if (nodes != NULL)
     {
         for (i = parser->toknext - 1; i >= 0; i--)
         {
             /* Unmatched opened object or array */
-            if (tokens[i].start != -1 && tokens[i].end == -1)
+            if (nodes[i].start != -1 && nodes[i].end == -1)
             {
                 return JX_INVAL;
             }
@@ -598,13 +556,26 @@ int jsmn_parse(struct jx_parser *parser, const char *js, const size_t len,
     return count;
 }
 
-/**
- * Creates a new parser based over a given buffer with an array of tokens
- * available.
- */
-void jsmn_init(struct jx_parser *parser)
+static void parser_init(struct jx_parser *parser, int bits)
 {
+    parser->bits = bits;
+    parser->nnodes = 0;
     parser->pos = 0;
     parser->toknext = 0;
     parser->toksuper = -1;
+}
+
+static struct jx_node *alloc_node(struct jx_parser *parser, int nnodes,
+                                  struct jx_node nodes[])
+{
+    struct jx_node *tok;
+    if (parser->toknext >= nnodes)
+    {
+        return NULL;
+    }
+    tok = &nodes[parser->toknext++];
+    tok->start = tok->end = -1;
+    tok->size = 0;
+    tok->parent = -1;
+    return tok;
 }
