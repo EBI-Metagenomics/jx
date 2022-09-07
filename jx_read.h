@@ -1,5 +1,5 @@
-#ifndef JX_H
-#define JX_H
+#ifndef JX_READ_H
+#define JX_READ_H
 
 #include "jx_cursor.h"
 #include "jx_error.h"

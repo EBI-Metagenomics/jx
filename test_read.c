@@ -1,4 +1,5 @@
-#include "jx.h"
+#include "jx_read.h"
+#include "jx_write.h"
 #include "test_utils.h"
 #include <errno.h>
 #include <string.h>
