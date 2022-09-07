@@ -12,6 +12,7 @@ static char empty_array_json[] = "[]";
 static char empty_object_json[] = "{}";
 static char array_array_json[] = "[[true, false], [null, -23], [-1.0]]";
 static char array_string_json[] = "[\"true\"]";
+static char single_true_json[] = "true";
 
 static void test_person(void);
 static void test_unmatched(void);
@@ -20,6 +21,7 @@ static void test_empty_array(void);
 static void test_object_array(void);
 static void test_array_array(void);
 static void test_array_string(void);
+static void test_single_true(void);
 
 int main(void)
 {
@@ -30,6 +32,7 @@ int main(void)
     test_object_array();
     test_array_array();
     test_array_string();
+    test_single_true();
     return 0;
 }
 
@@ -197,4 +200,10 @@ static void test_array_string(void)
     ASSERT(!strcmp(jr_as_string(jr), "true"));
     ASSERT(jr_as_null(jr) == NULL);
     ASSERT(jr_error() == JR_INVAL);
+}
+
+static void test_single_true(void)
+{
+    JR_INIT(jr);
+    ASSERT(jr_parse(jr, single_true_json) == JR_INVAL);
 }
