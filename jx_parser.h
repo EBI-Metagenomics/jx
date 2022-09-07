@@ -5,7 +5,7 @@
 
 struct jx_parser
 {
-    int bits;
+    int size;
     int nnodes;
     unsigned pos;
     unsigned toknext;
@@ -14,7 +14,7 @@ struct jx_parser
 
 struct jx_node;
 
-void parser_init(struct jx_parser *parser, int bits);
+void parser_init(struct jx_parser *parser, int size);
 int parser_parse(struct jx_parser *, size_t length, char *json, int nnodes,
                  struct jx_node *);
 

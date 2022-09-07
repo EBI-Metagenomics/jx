@@ -7,6 +7,7 @@ JX_DECLARE(jx, 8);
 
 static char person_json[] = "{ \"name\" : \"Jack\", \"age\" : 27 }";
 static char unmatched_json[] = "{ \"name\" : \"Jack\", \"age\" : 27 ";
+static char array_json[] = "[0, 3, { \"name\" : \"Jack\", \"age\" : 27 }]";
 
 #define PERSON_NAME_SIZE 32
 
@@ -18,17 +19,19 @@ static struct
 
 static void test_person(void);
 static void test_unmatched(void);
+static void test_array(void);
 
 int main(void)
 {
     test_person();
     test_unmatched();
+    test_array();
     return 0;
 }
 
 static void test_person(void)
 {
-    jx_init(jx, 8);
+    JX_INIT(jx);
     int rc = jx_parse(jx, person_json);
     ASSERT(rc == 5);
     ASSERT(jx_error() == 0);
@@ -67,7 +70,7 @@ static void test_person(void)
     ASSERT(jx_type(jx_up(jx)) == JX_OBJECT);
     ASSERT(jx_error() == 0);
     ASSERT(jx_type(jx_object_at(jx, "notfound")) == JX_OBJECT);
-    ASSERT(jx_error() == EINVAL);
+    ASSERT(jx_error() == JX_INVAL);
     jx_clear();
     ASSERT(jx_type(jx) == JX_OBJECT);
     ASSERT(!strcmp(jx_as_string(jx_object_at(jx, "name")), "Jack"));
@@ -91,7 +94,37 @@ static void test_person(void)
 
 static void test_unmatched(void)
 {
-    jx_init(jx, 8);
+    JX_INIT(jx);
     int rc = jx_parse(jx, unmatched_json);
     ASSERT(rc == JX_INVAL);
+}
+
+static void test_array(void)
+{
+    JX_INIT(jx);
+    int rc = jx_parse(jx, array_json);
+    ASSERT(rc == 8);
+
+    ASSERT(jx_type(jx) == JX_ARRAY);
+    ASSERT(jx_type(jx_next(jx)) == JX_NUMBER);
+    ASSERT(jx_type(jx_next(jx)) == JX_NUMBER);
+    ASSERT(jx_type(jx_next(jx)) == JX_OBJECT);
+    ASSERT(jx_type(jx_back(jx)) == JX_NUMBER);
+    ASSERT(jx_type(jx_back(jx)) == JX_NUMBER);
+    ASSERT(jx_type(jx_back(jx)) == JX_ARRAY);
+
+    ASSERT(jx_type(jx_array_at(jx, 0)) == JX_NUMBER);
+    ASSERT(jx_error() == JX_OK);
+    ASSERT(jx_type(jx_up(jx)) == JX_ARRAY);
+
+    ASSERT(jx_type(jx_array_at(jx, 1)) == JX_NUMBER);
+    ASSERT(jx_error() == JX_OK);
+    ASSERT(jx_type(jx_up(jx)) == JX_ARRAY);
+
+    ASSERT(jx_type(jx_array_at(jx, 2)) == JX_OBJECT);
+    ASSERT(jx_error() == JX_OK);
+    ASSERT(jx_type(jx_up(jx)) == JX_ARRAY);
+
+    ASSERT(jx_type(jx_array_at(jx, 3)) == JX_ARRAY);
+    ASSERT(jx_error() == JX_INVAL);
 }
