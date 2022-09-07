@@ -17,7 +17,7 @@ static void fill_node(struct jx_node *token, const int type, const int start,
 void parser_init(struct jx_parser *parser, int size)
 {
     parser->size = size;
-    parser->nnodes = 0;
+    parser->count = 0;
     parser->pos = 0;
     parser->toknext = 0;
     parser->toksuper = -1;
@@ -94,7 +94,7 @@ int parser_parse(struct jx_parser *parser, const size_t len, char *js,
 {
     int rc = JX_OK;
     struct jx_node *node = NULL;
-    int count = parser->toknext;
+    parser->count = parser->toknext;
 
     for (; parser->pos < len && js[parser->pos] != '\0'; parser->pos++)
     {
@@ -106,7 +106,7 @@ int parser_parse(struct jx_parser *parser, const size_t len, char *js,
         {
         case '{':
         case '[':
-            count++;
+            parser->count++;
             if ((rc = open_bracket(c, parser, nnodes, nodes))) return rc;
             break;
         case '}':
@@ -115,7 +115,7 @@ int parser_parse(struct jx_parser *parser, const size_t len, char *js,
             break;
         case '\"':
             if ((rc = parse_string(parser, len, js, nnodes, nodes))) return rc;
-            count++;
+            parser->count++;
             if (parser->toksuper != -1 && nodes != NULL)
             {
                 nodes[parser->toksuper].size++;
@@ -163,7 +163,7 @@ int parser_parse(struct jx_parser *parser, const size_t len, char *js,
             }
             if ((rc = parse_primitive(parser, len, js, nnodes, nodes)))
                 return rc;
-            count++;
+            parser->count++;
             if (parser->toksuper != -1)
             {
                 nodes[parser->toksuper].size++;
@@ -178,7 +178,7 @@ int parser_parse(struct jx_parser *parser, const size_t len, char *js,
 
     if ((rc = check_umatched(parser, nodes))) return rc;
 
-    return count;
+    return JX_OK;
 }
 
 static int parse_primitive(struct jx_parser *parser, size_t len, char const *js,

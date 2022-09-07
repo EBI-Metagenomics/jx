@@ -36,7 +36,7 @@ static inline struct jx_node *cnode(struct jx jx[])
 }
 static inline struct jx_node *sentinel(struct jx jx[])
 {
-    return &nodes(jx)[get_parser(jx)->nnodes];
+    return &nodes(jx)[get_parser(jx)->count];
 }
 static inline void delimit(struct jx jx[])
 {
@@ -68,8 +68,8 @@ static void sentinel_init(struct jx jx[])
     sentinel(jx)->start = 0;
     sentinel(jx)->end = 1;
     sentinel(jx)->size = 0;
-    sentinel(jx)->parent = get_parser(jx)->nnodes;
-    sentinel(jx)->prev = get_parser(jx)->nnodes;
+    sentinel(jx)->parent = get_parser(jx)->count;
+    sentinel(jx)->prev = get_parser(jx)->count;
 }
 
 int jx_parse(struct jx jx[], char *json)
@@ -78,10 +78,9 @@ int jx_parse(struct jx jx[], char *json)
     struct jx_parser *parser = get_parser(jx);
     int rc = parser_parse(parser, cursor(jx)->length, cursor(jx)->json,
                           parser->size, nodes(jx));
-    if (rc < 0) return rc;
-    parser->nnodes = rc;
+    if (rc) return rc;
     sentinel_init(jx);
-    if (parser->nnodes > 0) cnode(jx)->parent = -1;
+    if (parser->count > 0) cnode(jx)->parent = -1;
     return rc;
 }
 
@@ -102,8 +101,8 @@ struct jx *jx_back(struct jx jx[])
 
 static struct jx *setup_sentinel(struct jx jx[])
 {
-    nodes(jx)[get_parser(jx)->nnodes].prev = cursor(jx)->pos;
-    cursor(jx)->pos = get_parser(jx)->nnodes;
+    nodes(jx)[get_parser(jx)->count].prev = cursor(jx)->pos;
+    cursor(jx)->pos = get_parser(jx)->count;
     return jx;
 }
 
@@ -120,8 +119,7 @@ struct jx *jx_next(struct jx jx[])
 {
     if (jx_type(jx) == JX_SENTINEL) return jx;
 
-    if (cursor(jx)->pos + 1 >= get_parser(jx)->nnodes)
-        return setup_sentinel(jx);
+    if (cursor(jx)->pos + 1 >= get_parser(jx)->count) return setup_sentinel(jx);
 
     nodes(jx)[cursor(jx)->pos + 1].prev = cursor(jx)->pos;
     cursor(jx)->pos++;

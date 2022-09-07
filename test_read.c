@@ -32,8 +32,7 @@ int main(void)
 static void test_person(void)
 {
     JX_INIT(jx);
-    int rc = jx_parse(jx, person_json);
-    ASSERT(rc == 5);
+    ASSERT(!jx_parse(jx, person_json));
     ASSERT(jx_error() == 0);
 
     ASSERT(jx_type(jx) == JX_OBJECT);
@@ -95,15 +94,13 @@ static void test_person(void)
 static void test_unmatched(void)
 {
     JX_INIT(jx);
-    int rc = jx_parse(jx, unmatched_json);
-    ASSERT(rc == JX_INVAL);
+    ASSERT(jx_parse(jx, unmatched_json) == JX_INVAL);
 }
 
 static void test_array(void)
 {
     JX_INIT(jx);
-    int rc = jx_parse(jx, array_json);
-    ASSERT(rc == 8);
+    ASSERT(!jx_parse(jx, array_json));
 
     ASSERT(jx_type(jx) == JX_ARRAY);
     ASSERT(jx_type(jx_next(jx)) == JX_NUMBER);
