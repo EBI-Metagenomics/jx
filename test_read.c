@@ -70,7 +70,7 @@ static void test_person(void)
     ASSERT(jx_error() == 0);
     ASSERT(jx_type(jx_object_at(jx, "notfound")) == JX_OBJECT);
     ASSERT(jx_error() == JX_NOTFOUND);
-    jx_clear();
+    jx_reset(jx);
     ASSERT(jx_type(jx) == JX_OBJECT);
     ASSERT(!strcmp(jx_as_string(jx_object_at(jx, "name")), "Jack"));
     ASSERT(jx_error() == 0);

@@ -28,7 +28,7 @@ struct jx
 void __jx_init(struct jx[], int size);
 int jx_parse(struct jx[], char *json);
 int jx_error(void);
-void jx_clear(void);
+void jx_reset(struct jx[]);
 int jx_type(struct jx const[]);
 
 struct jx *jx_back(struct jx[]);

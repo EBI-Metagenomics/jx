@@ -86,7 +86,13 @@ int jx_parse(struct jx jx[], char *json)
 
 int jx_error(void) { return error; }
 
-void jx_clear(void) { error = 0; }
+void jx_reset(struct jx jx[])
+{
+    error = JX_OK;
+    cursor(jx)->pos = 0;
+    for (int i = 0; i <= get_parser(jx)->count; ++i)
+        nodes(jx)[i].prev = 0;
+}
 
 int jx_type(struct jx const jx[])
 {
