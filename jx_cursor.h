@@ -8,4 +8,6 @@ struct jx_cursor
     int pos;
 };
 
+void jx_cursor_init(struct jx_cursor *cursor, char *json);
+
 #endif

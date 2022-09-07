@@ -18,7 +18,7 @@ enum offset
     NODE_OFFSET = 2,
 };
 
-static inline struct jx_parser *PARSER(struct jx jx[])
+static inline struct jx_parser *get_parser(struct jx jx[])
 {
     return &jx[PARSER_OFFSET].parser;
 }
@@ -36,7 +36,7 @@ static inline struct jx_node *cnode(struct jx jx[])
 }
 static inline struct jx_node *sentinel(struct jx jx[])
 {
-    return &nodes(jx)[PARSER(jx)->nnodes];
+    return &nodes(jx)[get_parser(jx)->nnodes];
 }
 static inline void delimit(struct jx jx[])
 {
@@ -51,10 +51,14 @@ static inline char *cstring(struct jx jx[])
 {
     return &cursor(jx)->json[cnode(jx)->start];
 }
+static inline char *empty_string(struct jx jx[])
+{
+    return &cursor(jx)->json[cursor(jx)->length];
+}
 
 void __jx_init(struct jx jx[], int size)
 {
-    parser_init(PARSER(jx), size);
+    parser_init(get_parser(jx), size);
     cursor(jx)->pos = 0;
 }
 
@@ -64,17 +68,16 @@ static void sentinel_init(struct jx jx[])
     sentinel(jx)->start = 0;
     sentinel(jx)->end = 1;
     sentinel(jx)->size = 0;
-    sentinel(jx)->parent = PARSER(jx)->nnodes;
-    sentinel(jx)->prev = PARSER(jx)->nnodes;
+    sentinel(jx)->parent = get_parser(jx)->nnodes;
+    sentinel(jx)->prev = get_parser(jx)->nnodes;
 }
 
 int jx_parse(struct jx jx[], char *json)
 {
-    cursor(jx)->length = strlen(json);
-    cursor(jx)->json = json;
-    struct jx_parser *parser = PARSER(jx);
-    unsigned n = 1 << parser->size;
-    int rc = parser_parse(parser, strlen(json), json, n, nodes(jx));
+    jx_cursor_init(cursor(jx), json);
+    struct jx_parser *parser = get_parser(jx);
+    int rc = parser_parse(parser, cursor(jx)->length, cursor(jx)->json,
+                          parser->size, nodes(jx));
     if (rc < 0) return rc;
     parser->nnodes = rc;
     sentinel_init(jx);
@@ -99,8 +102,8 @@ struct jx *jx_back(struct jx jx[])
 
 static struct jx *setup_sentinel(struct jx jx[])
 {
-    nodes(jx)[PARSER(jx)->nnodes].prev = cursor(jx)->pos;
-    cursor(jx)->pos = PARSER(jx)->nnodes;
+    nodes(jx)[get_parser(jx)->nnodes].prev = cursor(jx)->pos;
+    cursor(jx)->pos = get_parser(jx)->nnodes;
     return jx;
 }
 
@@ -117,7 +120,8 @@ struct jx *jx_next(struct jx jx[])
 {
     if (jx_type(jx) == JX_SENTINEL) return jx;
 
-    if (cursor(jx)->pos + 1 >= PARSER(jx)->nnodes) return setup_sentinel(jx);
+    if (cursor(jx)->pos + 1 >= get_parser(jx)->nnodes)
+        return setup_sentinel(jx);
 
     nodes(jx)[cursor(jx)->pos + 1].prev = cursor(jx)->pos;
     cursor(jx)->pos++;
@@ -207,20 +211,15 @@ struct jx *jx_object_at(struct jx jx[], char const *key)
     return jx_down(jx);
 }
 
-static inline char *empty_string(struct jx jx[])
-{
-    return &cursor(jx)->json[cursor(jx)->length];
-}
-
 char *jx_string_of(struct jx jx[], char const *key)
 {
     if (error) return empty_string(jx);
 
+    int pos = cursor(jx)->pos;
     jx_object_at(jx, key);
     delimit(jx);
     char *str = cstring(jx);
-    jx_up(jx);
-    jx_up(jx);
+    rollback(jx, pos);
     return str;
 }
 
@@ -228,12 +227,12 @@ int64_t jx_int64_of(struct jx jx[], char const *key)
 {
     if (error) return 0;
 
+    int pos = cursor(jx)->pos;
     jx_object_at(jx, key);
     delimit(jx);
     int64_t val = zc_strto_int64(cstring(jx), NULL, 10);
     input_errno();
-    jx_up(jx);
-    jx_up(jx);
+    rollback(jx, pos);
     return val;
 }
 
