@@ -15,13 +15,13 @@ all: libjx.a
 libjx.a: $(OBJ)
 	ar rcs $@ $^
 
-test_read.o: test_read.c
-	$(CC) $(JX_CFLAGS) -c test_read.c
+test_read.o: test/read.c
+	$(CC) $(JX_CFLAGS) -I. -c test/read.c -o test_read.o
 
 test_read: test_read.o libjx.a
 	$(CC) -o $@ $< -L. -ljx
 
-test: test_read
+check: test_read
 	./test_read
 
 clean:
