@@ -1,4 +1,7 @@
 test_read
+test_write
+jx.h
+jx.c
 .cache/
 compile_commands.json
 
