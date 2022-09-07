@@ -38,6 +38,10 @@ static inline struct jx_node *sentinel(struct jx jx[])
 {
     return &nodes(jx)[PARSER(jx)->nnodes];
 }
+static inline void delimit(struct jx jx[])
+{
+    cursor(jx)->json[cnode(jx)->end] = '\0';
+}
 
 void __jx_init(struct jx jx[], int size)
 {
@@ -204,7 +208,7 @@ char *jx_string_of(struct jx jx[], char const *key)
     if (error) return empty_string(jx);
 
     jx_object_at(jx, key);
-    cursor(jx)->json[cnode(jx)->end] = '\0';
+    delimit(jx);
     char *str = &cursor(jx)->json[cnode(jx)->start];
     jx_up(jx);
     jx_up(jx);
@@ -215,12 +219,11 @@ int64_t jx_int64_of(struct jx jx[], char const *key)
 {
     if (error) return 0;
 
-    int save_errno = errno;
     jx_object_at(jx, key);
-    cursor(jx)->json[cnode(jx)->end] = '\0';
+    delimit(jx);
     int64_t val = zc_strto_int64(&cursor(jx)->json[cnode(jx)->start], NULL, 10);
-    error = errno;
-    errno = save_errno;
+    if (errno == EINVAL) error = JX_INVAL;
+    if (errno == ERANGE) error = JX_OUTRANGE;
     jx_up(jx);
     jx_up(jx);
     return val;
@@ -230,7 +233,7 @@ char *jx_as_string(struct jx jx[])
 {
     if (error) return empty_string(jx);
 
-    cursor(jx)->json[cnode(jx)->end] = '\0';
+    delimit(jx);
     return &cursor(jx)->json[cnode(jx)->start];
 }
 
@@ -238,9 +241,9 @@ int jx_as_int(struct jx jx[])
 {
     if (error) return 0;
 
-    cursor(jx)->json[cnode(jx)->end] = '\0';
+    delimit(jx);
     int val = zc_strto_int(&cursor(jx)->json[cnode(jx)->start], NULL, 10);
-    error = errno;
-    errno = 0;
+    if (errno == EINVAL) error = JX_INVAL;
+    if (errno == ERANGE) error = JX_OUTRANGE;
     return val;
 }
