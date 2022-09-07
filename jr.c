@@ -3,10 +3,12 @@
 #include "jr_node.h"
 #include "jr_parser.h"
 #include "jr_type.h"
-#include "zc_strto_static.h"
 #include <assert.h>
 #include <errno.h>
+#include <inttypes.h>
+#include <limits.h>
 #include <stddef.h>
+#include <stdlib.h>
 #include <string.h>
 
 /* meld-cut-here */
@@ -57,6 +59,9 @@ static inline char *empty_string(struct jr jr[])
     return &cursor(jr)->json[cursor(jr)->length];
 }
 static void sentinel_init(struct jr jr[]);
+static long strto_long(const char *restrict, char **restrict, int);
+static unsigned long strto_ulong(const char *restrict, char **restrict, int);
+static double strto_double(const char *restrict, char **restrict);
 
 void __jr_init(struct jr jr[], int alloc_size)
 {
@@ -276,7 +281,7 @@ long jr_as_long(struct jr jr[])
     if (error) return 0;
 
     delimit(jr);
-    long val = zc_strto_long(cstring(jr), NULL, 10);
+    long val = strto_long(cstring(jr), NULL, 10);
     input_errno();
     return val;
 }
@@ -287,7 +292,7 @@ unsigned long jr_as_ulong(struct jr jr[])
     if (error) return 0;
 
     delimit(jr);
-    unsigned long val = zc_strto_ulong(cstring(jr), NULL, 10);
+    unsigned long val = strto_ulong(cstring(jr), NULL, 10);
     input_errno();
     return val;
 }
@@ -298,7 +303,7 @@ double jr_as_double(struct jr jr[])
     if (error) return 0;
 
     delimit(jr);
-    double val = zc_strto_double(cstring(jr), NULL);
+    double val = strto_double(cstring(jr), NULL);
     input_errno();
     return val;
 }
@@ -311,5 +316,55 @@ static void sentinel_init(struct jr jr[])
     sentinel(jr)->size = 0;
     sentinel(jr)->parent = get_parser(jr)->size;
     sentinel(jr)->prev = get_parser(jr)->size;
+}
+
+static long strto_long(const char *restrict nptr, char **restrict endptr,
+                       int base)
+{
+    errno = 0;
+    intmax_t v = strtoimax(nptr, endptr, base);
+    if (errno)
+    {
+        if (v == INTMAX_MAX) return LONG_MAX;
+        if (v == INTMAX_MIN) return LONG_MIN;
+        assert(v == 0);
+        return 0;
+    }
+    if (v > LONG_MAX)
+    {
+        errno = ERANGE;
+        return LONG_MAX;
+    }
+    if (v < LONG_MIN)
+    {
+        errno = ERANGE;
+        return LONG_MIN;
+    }
+    return (long)v;
+}
+
+static unsigned long strto_ulong(const char *restrict nptr,
+                                 char **restrict endptr, int base)
+{
+    errno = 0;
+    uintmax_t v = strtoumax(nptr, endptr, base);
+    if (errno)
+    {
+        if (v == UINTMAX_MAX) return ULONG_MAX;
+        assert(v == 0);
+        return 0;
+    }
+    if (v > ULONG_MAX)
+    {
+        errno = ERANGE;
+        return ULONG_MAX;
+    }
+    return (unsigned long)v;
+}
+
+static double strto_double(const char *restrict nptr, char **restrict endptr)
+{
+    errno = 0;
+    return strtod(nptr, endptr);
 }
 /* meld-cut-here */

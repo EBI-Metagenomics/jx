@@ -94,15 +94,11 @@ int __jr_parser_parse(struct jr_parser *parser, const size_t len, char *js,
                       int nnodes, struct jr_node *nodes)
 {
     int rc = JR_OK;
-    struct jr_node *node = NULL;
     parser->size = parser->toknext;
 
     for (; parser->pos < len && js[parser->pos] != '\0'; parser->pos++)
     {
-        char c;
-        int type;
-
-        c = js[parser->pos];
+        char c = js[parser->pos];
         switch (c)
         {
         case '{':
