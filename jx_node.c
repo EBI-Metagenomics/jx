@@ -2,8 +2,8 @@
 #include "jx_compiler.h"
 #include "jx_parser.h"
 
-struct jx_node *node_alloc(struct jx_parser *parser, int nnodes,
-                           struct jx_node *nodes)
+struct jx_node *__jx_node_alloc(struct jx_parser *parser, int nnodes,
+                                struct jx_node *nodes)
 {
     if (parser->toknext >= nnodes) return NULL;
     struct jx_node *node = &nodes[parser->toknext++];

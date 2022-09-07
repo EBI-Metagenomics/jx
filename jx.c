@@ -218,15 +218,46 @@ char *jx_string_of(struct jx jx[], char const *key)
     return str;
 }
 
-int64_t jx_int64_of(struct jx jx[], char const *key)
+long jx_long_of(struct jx jx[], char const *key)
 {
     if (error) return 0;
 
     int pos = cursor(jx)->pos;
     jx_object_at(jx, key);
-    delimit(jx);
-    int64_t val = zc_strto_int64(cstring(jx), NULL, 10);
-    input_errno();
+    long val = jx_as_long(jx);
+    rollback(jx, pos);
+    return val;
+}
+
+int jx_int_of(struct jx jx[], char const *key)
+{
+    if (error) return 0;
+
+    int pos = cursor(jx)->pos;
+    jx_object_at(jx, key);
+    int val = jx_as_int(jx);
+    rollback(jx, pos);
+    return val;
+}
+
+unsigned long jx_ulong_of(struct jx jx[], char const *key)
+{
+    if (error) return 0;
+
+    int pos = cursor(jx)->pos;
+    jx_object_at(jx, key);
+    unsigned long val = jx_as_ulong(jx);
+    rollback(jx, pos);
+    return val;
+}
+
+unsigned int jx_uint_of(struct jx jx[], char const *key)
+{
+    if (error) return 0;
+
+    int pos = cursor(jx)->pos;
+    jx_object_at(jx, key);
+    unsigned int val = jx_as_uint(jx);
     rollback(jx, pos);
     return val;
 }
@@ -239,12 +270,42 @@ char *jx_as_string(struct jx jx[])
     return cstring(jx);
 }
 
+long jx_as_long(struct jx jx[])
+{
+    if (error) return 0;
+
+    delimit(jx);
+    long val = zc_strto_long(cstring(jx), NULL, 10);
+    input_errno();
+    return val;
+}
+
 int jx_as_int(struct jx jx[])
 {
     if (error) return 0;
 
     delimit(jx);
     int val = zc_strto_int(cstring(jx), NULL, 10);
+    input_errno();
+    return val;
+}
+
+unsigned long jx_as_ulong(struct jx jx[])
+{
+    if (error) return 0;
+
+    delimit(jx);
+    unsigned long val = zc_strto_ulong(cstring(jx), NULL, 10);
+    input_errno();
+    return val;
+}
+
+unsigned int jx_as_uint(struct jx jx[])
+{
+    if (error) return 0;
+
+    delimit(jx);
+    unsigned int val = zc_strto_uint(cstring(jx), NULL, 10);
     input_errno();
     return val;
 }

@@ -14,7 +14,7 @@ static int primitive_type(char c);
 static void fill_node(struct jx_node *token, const int type, const int start,
                       const int end);
 
-void parser_init(struct jx_parser *parser, int size)
+void __jx_parser_init(struct jx_parser *parser, int size)
 {
     parser->size = size;
     parser->count = 0;
@@ -26,7 +26,7 @@ void parser_init(struct jx_parser *parser, int size)
 int open_bracket(char c, struct jx_parser *parser, int nnodes,
                  struct jx_node *nodes)
 {
-    struct jx_node *node = node_alloc(parser, nnodes, nodes);
+    struct jx_node *node = __jx_node_alloc(parser, nnodes, nodes);
     if (node == NULL) return JX_NOMEM;
     if (parser->toksuper != -1)
     {
@@ -89,8 +89,8 @@ int close_bracket(char c, struct jx_parser *parser, int nnodes,
     return JX_OK;
 }
 
-int parser_parse(struct jx_parser *parser, const size_t len, char *js,
-                 int nnodes, struct jx_node *nodes)
+int __jx_parser_parse(struct jx_parser *parser, const size_t len, char *js,
+                      int nnodes, struct jx_node *nodes)
 {
     int rc = JX_OK;
     struct jx_node *node = NULL;
@@ -213,7 +213,7 @@ static int parse_primitive(struct jx_parser *parser, size_t len, char const *js,
     return JX_INVAL;
 
 found:;
-    struct jx_node *node = node_alloc(parser, nnodes, nodes);
+    struct jx_node *node = __jx_node_alloc(parser, nnodes, nodes);
     if (node == NULL)
     {
         parser->pos = start;
@@ -246,7 +246,7 @@ static int parse_string(struct jx_parser *parser, size_t len, const char *js,
             {
                 return JX_OK;
             }
-            token = node_alloc(parser, nnodes, nodes);
+            token = __jx_node_alloc(parser, nnodes, nodes);
             if (token == NULL)
             {
                 parser->pos = start;

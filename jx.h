@@ -41,9 +41,15 @@ struct jx *jx_array_at(struct jx[], int idx);
 struct jx *jx_object_at(struct jx[], char const *key);
 
 char *jx_string_of(struct jx[], char const *key);
-int64_t jx_int64_of(struct jx[], char const *key);
+long jx_long_of(struct jx[], char const *key);
+int jx_int_of(struct jx[], char const *key);
+unsigned long jx_ulong_of(struct jx[], char const *key);
+unsigned int jx_uint_of(struct jx[], char const *key);
 
 char *jx_as_string(struct jx[]);
+long jx_as_long(struct jx[]);
 int jx_as_int(struct jx[]);
+unsigned long jx_as_ulong(struct jx[]);
+unsigned int jx_as_uint(struct jx[]);
 
 #endif

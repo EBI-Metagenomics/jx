@@ -88,7 +88,7 @@ static void test_person(void)
     jx_up(jx);
     ASSERT(jx_type(jx) == JX_OBJECT);
     ASSERT(!strcmp(jx_string_of(jx, "name"), "Jack"));
-    ASSERT(jx_int64_of(jx, "age") == 27);
+    ASSERT(jx_int_of(jx, "age") == 27);
 }
 
 static void test_unmatched(void)
