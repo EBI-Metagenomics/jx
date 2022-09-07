@@ -5,6 +5,7 @@
 #include <errno.h>
 #include <inttypes.h>
 #include <limits.h>
+#include <stdlib.h>
 
 #define ZC_API static
 
@@ -358,6 +359,25 @@ ZC_API uint8_t zc_strto_uint8(const char *restrict nptr, char **restrict endptr,
         return UINT8_MAX;
     }
     return (uint8_t)v;
+}
+
+ZC_API float zc_strto_float(const char *restrict nptr, char **restrict endptr)
+{
+    errno = 0;
+    return strtof(nptr, endptr);
+}
+
+ZC_API double zc_strto_double(const char *restrict nptr, char **restrict endptr)
+{
+    errno = 0;
+    return strtod(nptr, endptr);
+}
+
+ZC_API long double zc_strto_ldouble(const char *restrict nptr,
+                                    char **restrict endptr)
+{
+    errno = 0;
+    return strtold(nptr, endptr);
 }
 
 #endif

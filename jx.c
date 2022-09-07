@@ -9,7 +9,7 @@
 #include <stddef.h>
 #include <string.h>
 
-static thread_local int error = 0;
+static thread_local int error = JX_OK;
 
 enum offset
 {
@@ -57,21 +57,23 @@ static inline char *empty_string(struct jx jx[])
 }
 static void sentinel_init(struct jx jx[]);
 
-void __jx_init(struct jx jx[], int size)
+void __jx_init(struct jx jx[], int alloc_size)
 {
-    __jx_parser_init(get_parser(jx), size);
-    cursor(jx)->pos = 0;
+    error = JX_OK;
+    __jx_parser_init(get_parser(jx), alloc_size);
 }
 
 int jx_parse(struct jx jx[], char *json)
 {
+    error = JX_OK;
     __jx_cursor_init(cursor(jx), json);
-    struct jx_parser *parser = get_parser(jx);
-    int rc = __jx_parser_parse(parser, cursor(jx)->length, cursor(jx)->json,
-                               parser->alloc_size, nodes(jx));
+    struct jx_parser *p = get_parser(jx);
+    struct jx_cursor *c = cursor(jx);
+    int n = p->alloc_size - 2;
+    int rc = __jx_parser_parse(p, c->length, c->json, n, nodes(jx));
     if (rc) return rc;
     sentinel_init(jx);
-    if (parser->size > 0) cnode(jx)->parent = -1;
+    if (p->size > 0) cnode(jx)->parent = -1;
     return rc;
 }
 
@@ -89,6 +91,8 @@ int jx_type(struct jx const jx[])
 {
     return nodes((struct jx *)jx)[cursor((struct jx *)jx)->pos].type;
 }
+
+int jx_nchild(struct jx const jx[]) { return cnode((struct jx *)jx)->size; }
 
 struct jx *jx_back(struct jx jx[])
 {
@@ -208,18 +212,19 @@ struct jx *jx_object_at(struct jx jx[], char const *key)
 
 char *jx_string_of(struct jx jx[], char const *key)
 {
+    if (jx_type(jx) != JX_OBJECT) error = JX_INVAL;
     if (error) return empty_string(jx);
 
     int pos = cursor(jx)->pos;
     jx_object_at(jx, key);
-    delimit(jx);
-    char *str = cstring(jx);
+    char *str = jx_as_string(jx);
     rollback(jx, pos);
     return str;
 }
 
 long jx_long_of(struct jx jx[], char const *key)
 {
+    if (jx_type(jx) != JX_OBJECT) error = JX_INVAL;
     if (error) return 0;
 
     int pos = cursor(jx)->pos;
@@ -231,6 +236,7 @@ long jx_long_of(struct jx jx[], char const *key)
 
 int jx_int_of(struct jx jx[], char const *key)
 {
+    if (jx_type(jx) != JX_OBJECT) error = JX_INVAL;
     if (error) return 0;
 
     int pos = cursor(jx)->pos;
@@ -242,6 +248,7 @@ int jx_int_of(struct jx jx[], char const *key)
 
 unsigned long jx_ulong_of(struct jx jx[], char const *key)
 {
+    if (jx_type(jx) != JX_OBJECT) error = JX_INVAL;
     if (error) return 0;
 
     int pos = cursor(jx)->pos;
@@ -253,6 +260,7 @@ unsigned long jx_ulong_of(struct jx jx[], char const *key)
 
 unsigned int jx_uint_of(struct jx jx[], char const *key)
 {
+    if (jx_type(jx) != JX_OBJECT) error = JX_INVAL;
     if (error) return 0;
 
     int pos = cursor(jx)->pos;
@@ -264,14 +272,30 @@ unsigned int jx_uint_of(struct jx jx[], char const *key)
 
 char *jx_as_string(struct jx jx[])
 {
+    if (jx_type(jx) != JX_STRING) error = JX_INVAL;
     if (error) return empty_string(jx);
 
     delimit(jx);
     return cstring(jx);
 }
 
+bool jx_as_bool(struct jx jx[])
+{
+    if (jx_type(jx) != JX_BOOL) error = JX_INVAL;
+    if (error) return false;
+
+    return cstring(jx)[0] == 't';
+}
+
+void *jx_as_null(struct jx jx[])
+{
+    if (jx_type(jx) != JX_NULL) error = JX_INVAL;
+    return NULL;
+}
+
 long jx_as_long(struct jx jx[])
 {
+    if (jx_type(jx) != JX_NUMBER) error = JX_INVAL;
     if (error) return 0;
 
     delimit(jx);
@@ -282,6 +306,7 @@ long jx_as_long(struct jx jx[])
 
 int jx_as_int(struct jx jx[])
 {
+    if (jx_type(jx) != JX_NUMBER) error = JX_INVAL;
     if (error) return 0;
 
     delimit(jx);
@@ -292,6 +317,7 @@ int jx_as_int(struct jx jx[])
 
 unsigned long jx_as_ulong(struct jx jx[])
 {
+    if (jx_type(jx) != JX_NUMBER) error = JX_INVAL;
     if (error) return 0;
 
     delimit(jx);
@@ -302,10 +328,22 @@ unsigned long jx_as_ulong(struct jx jx[])
 
 unsigned int jx_as_uint(struct jx jx[])
 {
+    if (jx_type(jx) != JX_NUMBER) error = JX_INVAL;
     if (error) return 0;
 
     delimit(jx);
     unsigned int val = zc_strto_uint(cstring(jx), NULL, 10);
+    input_errno();
+    return val;
+}
+
+double jx_as_double(struct jx jx[])
+{
+    if (jx_type(jx) != JX_NUMBER) error = JX_INVAL;
+    if (error) return 0;
+
+    delimit(jx);
+    double val = zc_strto_double(cstring(jx), NULL);
     input_errno();
     return val;
 }

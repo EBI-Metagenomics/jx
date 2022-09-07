@@ -25,11 +25,12 @@ struct jx
 #define JX_DECLARE(name, size) struct jx name[size];
 #define JX_INIT(name) __jx_init((name), __JX_ARRAY_SIZE(name))
 
-void __jx_init(struct jx[], int size);
+void __jx_init(struct jx[], int alloc_size);
 int jx_parse(struct jx[], char *json);
 int jx_error(void);
 void jx_reset(struct jx[]);
 int jx_type(struct jx const[]);
+int jx_nchild(struct jx const[]);
 
 struct jx *jx_back(struct jx[]);
 struct jx *jx_down(struct jx[]);
@@ -47,9 +48,12 @@ unsigned long jx_ulong_of(struct jx[], char const *key);
 unsigned int jx_uint_of(struct jx[], char const *key);
 
 char *jx_as_string(struct jx[]);
+bool jx_as_bool(struct jx[]);
+void *jx_as_null(struct jx[]);
 long jx_as_long(struct jx[]);
 int jx_as_int(struct jx[]);
 unsigned long jx_as_ulong(struct jx[]);
 unsigned int jx_as_uint(struct jx[]);
+double jx_as_double(struct jx[]);
 
 #endif
