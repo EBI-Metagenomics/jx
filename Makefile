@@ -2,8 +2,8 @@
 
 JX_VERSION := 0.1.0
 
-CC := gcc
-CFLAGS := $(CFLAGS) -std=gnu11 -Wall
+CC ?= gcc
+CFLAGS := $(CFLAGS) -std=c99 -Wall
 
 SRC := jr.c jr_cursor.c jr_node.c jr_parser.c jw.c
 OBJ := $(SRC:.c=.o)
