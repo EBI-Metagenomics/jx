@@ -2,6 +2,7 @@
 #define JX_H
 
 #include "jx_cursor.h"
+#include "jx_error.h"
 #include "jx_node.h"
 #include "jx_parser.h"
 #include "jx_type.h"
