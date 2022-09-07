@@ -16,8 +16,8 @@ enum offset
 };
 
 static void parser_init(struct jx_parser *parser, int bits);
-int jsmn_parse(struct jx_parser *parser, const char *js, const size_t len,
-               struct jx_node *tokens, int nnodes);
+static int parser_parse(struct jx_parser *, const char *js, const size_t len,
+                        int nnodes, struct jx_node[]);
 static struct jx_node *alloc_node(struct jx_parser *, int, struct jx_node[]);
 
 #define PARSER(jx) ((jx)[PARSER_OFFSET].parser)
@@ -77,7 +77,7 @@ int jx_parse(struct jx jx[], char *json)
     cursor(jx).json = json;
     struct jx_parser *parser = &PARSER(jx);
     unsigned n = 1 << parser->bits;
-    int rc = jsmn_parse(parser, json, strlen(json), nodes(jx), n);
+    int rc = parser_parse(parser, json, strlen(json), n, nodes(jx));
     if (rc < 0) return rc;
     parser->nnodes = rc;
     sentinel_init(jx);
@@ -392,8 +392,8 @@ static int jsmn_parse_string(struct jx_parser *parser, const char *js,
     return JX_INVAL;
 }
 
-int jsmn_parse(struct jx_parser *parser, const char *js, const size_t len,
-               struct jx_node *nodes, int nnodes)
+static int parser_parse(struct jx_parser *parser, const char *js,
+                        const size_t len, int nnodes, struct jx_node nodes[])
 {
     int r;
     int i;
