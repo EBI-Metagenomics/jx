@@ -24,6 +24,73 @@ void parser_init(struct jx_parser *parser, int bits)
     parser->toksuper = -1;
 }
 
+int open_bracket(char c, struct jx_parser *parser, int nnodes,
+                 struct jx_node *nodes)
+{
+    if (nodes == NULL)
+    {
+        return JX_OK;
+    }
+    struct jx_node *node = node_alloc(parser, nnodes, nodes);
+    if (node == NULL)
+    {
+        return JX_NOMEM;
+    }
+    if (parser->toksuper != -1)
+    {
+        struct jx_node *t = &nodes[parser->toksuper];
+        /* In strict mode an object or array can't become a key */
+        if (t->type == JX_OBJECT)
+        {
+            return JX_INVAL;
+        }
+        t->size++;
+        node->parent = parser->toksuper;
+    }
+    node->type = (c == '{' ? JX_OBJECT : JX_ARRAY);
+    node->start = parser->pos;
+    parser->toksuper = parser->toknext - 1;
+    return JX_OK;
+}
+
+int close_bracket(char c, struct jx_parser *parser, int nnodes,
+                  struct jx_node *nodes)
+{
+    if (nodes == NULL)
+    {
+        return JX_OK;
+    }
+    int type = (c == '}' ? JX_OBJECT : JX_ARRAY);
+    if (parser->toknext < 1)
+    {
+        return JX_INVAL;
+    }
+    struct jx_node *node = &nodes[parser->toknext - 1];
+    for (;;)
+    {
+        if (node->start != -1 && node->end == -1)
+        {
+            if (node->type != type)
+            {
+                return JX_INVAL;
+            }
+            node->end = parser->pos + 1;
+            parser->toksuper = node->parent;
+            break;
+        }
+        if (node->parent == -1)
+        {
+            if (node->type != type || parser->toksuper == -1)
+            {
+                return JX_INVAL;
+            }
+            break;
+        }
+        node = &nodes[node->parent];
+    }
+    return JX_OK;
+}
+
 int parser_parse(struct jx_parser *parser, const size_t len, char *js,
                  int nnodes, struct jx_node *nodes)
 {
@@ -42,64 +109,11 @@ int parser_parse(struct jx_parser *parser, const size_t len, char *js,
         case '{':
         case '[':
             count++;
-            if (nodes == NULL)
-            {
-                break;
-            }
-            node = node_alloc(parser, nnodes, nodes);
-            if (node == NULL)
-            {
-                return JX_NOMEM;
-            }
-            if (parser->toksuper != -1)
-            {
-                struct jx_node *t = &nodes[parser->toksuper];
-                /* In strict mode an object or array can't become a key */
-                if (t->type == JX_OBJECT)
-                {
-                    return JX_INVAL;
-                }
-                t->size++;
-                node->parent = parser->toksuper;
-            }
-            node->type = (c == '{' ? JX_OBJECT : JX_ARRAY);
-            node->start = parser->pos;
-            parser->toksuper = parser->toknext - 1;
+            if ((rc = open_bracket(c, parser, nnodes, nodes))) return rc;
             break;
         case '}':
         case ']':
-            if (nodes == NULL)
-            {
-                break;
-            }
-            type = (c == '}' ? JX_OBJECT : JX_ARRAY);
-            if (parser->toknext < 1)
-            {
-                return JX_INVAL;
-            }
-            node = &nodes[parser->toknext - 1];
-            for (;;)
-            {
-                if (node->start != -1 && node->end == -1)
-                {
-                    if (node->type != type)
-                    {
-                        return JX_INVAL;
-                    }
-                    node->end = parser->pos + 1;
-                    parser->toksuper = node->parent;
-                    break;
-                }
-                if (node->parent == -1)
-                {
-                    if (node->type != type || parser->toksuper == -1)
-                    {
-                        return JX_INVAL;
-                    }
-                    break;
-                }
-                node = &nodes[node->parent];
-            }
+            if ((rc = close_bracket(c, parser, nnodes, nodes))) return rc;
             break;
         case '\"':
             if ((rc = parse_string(parser, js, len, nodes, nnodes))) return rc;
@@ -125,7 +139,6 @@ int parser_parse(struct jx_parser *parser, const size_t len, char *js,
                 parser->toksuper = nodes[parser->toksuper].parent;
             }
             break;
-        /* In strict mode primitives are: numbers and booleans */
         case '-':
         case '0':
         case '1':
