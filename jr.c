@@ -1,8 +1,8 @@
 #include "jr.h"
-#include "jr_compiler.h"
 #include "jr_node.h"
 #include "jr_parser.h"
 #include "jr_type.h"
+/* meld-cut-here */
 #include <assert.h>
 #include <errno.h>
 #include <inttypes.h>
@@ -11,7 +11,21 @@
 #include <stdlib.h>
 #include <string.h>
 
-/* meld-cut-here */
+// Source: https://stackoverflow.com/a/18298965
+#ifndef thread_local
+#if __STDC_VERSION__ >= 201112 && !defined __STDC_NO_THREADS__
+#define thread_local _Thread_local
+#elif defined _WIN32 && (defined _MSC_VER || defined __ICL ||                  \
+                         defined __DMC__ || defined __BORLANDC__)
+#define thread_local __declspec(thread)
+/* note that ICC (linux) and Clang are covered by __GNUC__ */
+#elif defined __GNUC__ || defined __SUNPRO_C || defined __xlC__
+#define thread_local __thread
+#else
+#error "Cannot define thread_local"
+#endif
+#endif
+
 static thread_local int error = JR_OK;
 
 enum offset
@@ -62,11 +76,14 @@ static void sentinel_init(struct jr jr[]);
 static long strto_long(const char *restrict, char **restrict, int);
 static unsigned long strto_ulong(const char *restrict, char **restrict, int);
 static double strto_double(const char *restrict, char **restrict);
+extern void jr_parser_init(struct jr_parser *parser, int size);
+extern int jr_parser_parse(struct jr_parser *, size_t length, char *json,
+                           int nnodes, struct jr_node *);
 
 void __jr_init(struct jr jr[], int alloc_size)
 {
     error = JR_OK;
-    __jr_parser_init(get_parser(jr), alloc_size);
+    jr_parser_init(get_parser(jr), alloc_size);
 }
 
 int jr_parse(struct jr jr[], char *json)
@@ -76,7 +93,7 @@ int jr_parse(struct jr jr[], char *json)
     struct jr_parser *p = get_parser(jr);
     struct jr_cursor *c = cursor(jr);
     int n = p->alloc_size - 2;
-    int rc = __jr_parser_parse(p, c->length, c->json, n, nodes(jr));
+    int rc = jr_parser_parse(p, c->length, c->json, n, nodes(jr));
     if (rc) return rc;
     sentinel_init(jr);
     if (p->size > 0) cnode(jr)->parent = -1;

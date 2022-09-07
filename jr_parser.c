@@ -2,10 +2,10 @@
 #include "jr_error.h"
 #include "jr_node.h"
 #include "jr_type.h"
+/* meld-cut-here */
 #include <assert.h>
 #include <stdbool.h>
 
-/* meld-cut-here */
 static int parse_primitive(struct jr_parser *parser, size_t length,
                            char const *json, size_t num_tokens,
                            struct jr_node *tokens);
@@ -15,7 +15,7 @@ static int primitive_type(char c);
 static void fill_node(struct jr_node *token, const int type, const int start,
                       const int end);
 
-void __jr_parser_init(struct jr_parser *parser, int alloc_size)
+extern void jr_parser_init(struct jr_parser *parser, int alloc_size)
 {
     parser->alloc_size = alloc_size;
     parser->size = 0;
@@ -90,8 +90,8 @@ static int close_bracket(char c, struct jr_parser *parser, int nnodes,
     return JR_OK;
 }
 
-int __jr_parser_parse(struct jr_parser *parser, const size_t len, char *js,
-                      int nnodes, struct jr_node *nodes)
+extern int jr_parser_parse(struct jr_parser *parser, const size_t len, char *js,
+                           int nnodes, struct jr_node *nodes)
 {
     int rc = JR_OK;
     parser->size = parser->toknext;

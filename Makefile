@@ -32,6 +32,6 @@ check: test_read test_write
 	./test_write
 
 clean:
-	rm -f $(OBJ) libjx.a test_read test_read.o test_write test_write.o
+	rm -f $(OBJ) libjx.a test_read test_read.o test_write test_write.o jx.c jx.h
 
 .PHONY: all check clean
