@@ -3,9 +3,9 @@
 JX_VERSION := 0.1.0
 JX_CFLAGS := $(CFLAGS) -std=gnu11
 
-SRC := jx_read.c jx_write.c jx_node.c jx_parser.c jx_cursor.c
+SRC := jr.c jr_node.c jr_parser.c jr_cursor.c jw.c
 OBJ := $(SRC:.c=.o)
-HDR := jx_read.h jx_write.h jx_cursor.h jx_node.h jx_type.h zc_strto_static.h jx_compiler.h jx_error.h jx_parser.h jx_cursor.h
+HDR := jr.h jr_cursor.h jr_node.h jr_type.h zc_strto_static.h jr_compiler.h jr_error.h jr_parser.h jw.h
 
 all: libjx.a
 

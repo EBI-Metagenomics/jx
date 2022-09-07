@@ -1,6 +1,7 @@
-#ifndef JX_COMPILER_H
-#define JX_COMPILER_H
+#ifndef JR_COMPILER_H
+#define JR_COMPILER_H
 
+/* meld-cut-here */
 // Source: https://stackoverflow.com/a/18298965
 #ifndef thread_local
 #if __STDC_VERSION__ >= 201112 && !defined __STDC_NO_THREADS__
@@ -20,5 +21,6 @@
 #undef NULL
 #define NULL ((void *)0)
 #endif
+/* meld-cut-here */
 
 #endif

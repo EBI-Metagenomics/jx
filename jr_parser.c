@@ -1,20 +1,21 @@
-#include "jx_parser.h"
-#include "jx_error.h"
-#include "jx_node.h"
-#include "jx_type.h"
+#include "jr_parser.h"
+#include "jr_error.h"
+#include "jr_node.h"
+#include "jr_type.h"
 #include <assert.h>
 #include <stdbool.h>
 
-static int parse_primitive(struct jx_parser *parser, size_t length,
+/* meld-cut-here */
+static int parse_primitive(struct jr_parser *parser, size_t length,
                            char const *json, size_t num_tokens,
-                           struct jx_node *tokens);
-static int parse_string(struct jx_parser *parser, size_t len, const char *js,
-                        size_t nnodes, struct jx_node *nodes);
+                           struct jr_node *tokens);
+static int parse_string(struct jr_parser *parser, size_t len, const char *js,
+                        size_t nnodes, struct jr_node *nodes);
 static int primitive_type(char c);
-static void fill_node(struct jx_node *token, const int type, const int start,
+static void fill_node(struct jr_node *token, const int type, const int start,
                       const int end);
 
-void __jx_parser_init(struct jx_parser *parser, int alloc_size)
+void __jr_parser_init(struct jr_parser *parser, int alloc_size)
 {
     parser->alloc_size = alloc_size;
     parser->size = 0;
@@ -23,54 +24,54 @@ void __jx_parser_init(struct jx_parser *parser, int alloc_size)
     parser->toksuper = -1;
 }
 
-int open_bracket(char c, struct jx_parser *parser, int nnodes,
-                 struct jx_node *nodes)
+static int open_bracket(char c, struct jr_parser *parser, int nnodes,
+                        struct jr_node *nodes)
 {
-    struct jx_node *node = __jx_node_alloc(parser, nnodes, nodes);
-    if (node == NULL) return JX_NOMEM;
+    struct jr_node *node = __jr_node_alloc(parser, nnodes, nodes);
+    if (node == NULL) return JR_NOMEM;
     if (parser->toksuper != -1)
     {
-        struct jx_node *t = &nodes[parser->toksuper];
+        struct jr_node *t = &nodes[parser->toksuper];
         /* In strict mode an object or array can't become a key */
-        if (t->type == JX_OBJECT)
+        if (t->type == JR_OBJECT)
         {
-            return JX_INVAL;
+            return JR_INVAL;
         }
         t->size++;
         node->parent = parser->toksuper;
     }
-    node->type = (c == '{' ? JX_OBJECT : JX_ARRAY);
+    node->type = (c == '{' ? JR_OBJECT : JR_ARRAY);
     node->start = parser->pos;
     parser->toksuper = parser->toknext - 1;
-    return JX_OK;
+    return JR_OK;
 }
 
-int check_umatched(struct jx_parser *parser, struct jx_node *nodes)
+static int check_umatched(struct jr_parser *parser, struct jr_node *nodes)
 {
     for (int i = parser->toknext - 1; i >= 0; i--)
     {
         /* Unmatched opened object or array */
-        if (nodes[i].start != -1 && nodes[i].end == -1) return JX_INVAL;
+        if (nodes[i].start != -1 && nodes[i].end == -1) return JR_INVAL;
     }
-    return JX_OK;
+    return JR_OK;
 }
 
-int close_bracket(char c, struct jx_parser *parser, int nnodes,
-                  struct jx_node *nodes)
+static int close_bracket(char c, struct jr_parser *parser, int nnodes,
+                         struct jr_node *nodes)
 {
-    int type = (c == '}' ? JX_OBJECT : JX_ARRAY);
+    int type = (c == '}' ? JR_OBJECT : JR_ARRAY);
     if (parser->toknext < 1)
     {
-        return JX_INVAL;
+        return JR_INVAL;
     }
-    struct jx_node *node = &nodes[parser->toknext - 1];
+    struct jr_node *node = &nodes[parser->toknext - 1];
     for (;;)
     {
         if (node->start != -1 && node->end == -1)
         {
             if (node->type != type)
             {
-                return JX_INVAL;
+                return JR_INVAL;
             }
             node->end = parser->pos + 1;
             parser->toksuper = node->parent;
@@ -80,20 +81,20 @@ int close_bracket(char c, struct jx_parser *parser, int nnodes,
         {
             if (node->type != type || parser->toksuper == -1)
             {
-                return JX_INVAL;
+                return JR_INVAL;
             }
             break;
         }
         node = &nodes[node->parent];
     }
-    return JX_OK;
+    return JR_OK;
 }
 
-int __jx_parser_parse(struct jx_parser *parser, const size_t len, char *js,
-                      int nnodes, struct jx_node *nodes)
+int __jr_parser_parse(struct jr_parser *parser, const size_t len, char *js,
+                      int nnodes, struct jr_node *nodes)
 {
-    int rc = JX_OK;
-    struct jx_node *node = NULL;
+    int rc = JR_OK;
+    struct jr_node *node = NULL;
     parser->size = parser->toknext;
 
     for (; parser->pos < len && js[parser->pos] != '\0'; parser->pos++)
@@ -131,8 +132,8 @@ int __jx_parser_parse(struct jx_parser *parser, const size_t len, char *js,
             break;
         case ',':
             if (parser->toksuper != -1 &&
-                nodes[parser->toksuper].type != JX_ARRAY &&
-                nodes[parser->toksuper].type != JX_OBJECT)
+                nodes[parser->toksuper].type != JR_ARRAY &&
+                nodes[parser->toksuper].type != JR_OBJECT)
             {
                 parser->toksuper = nodes[parser->toksuper].parent;
             }
@@ -154,11 +155,11 @@ int __jx_parser_parse(struct jx_parser *parser, const size_t len, char *js,
             /* And they must not be keys of the object */
             if (parser->toksuper != -1)
             {
-                const struct jx_node *t = &nodes[parser->toksuper];
-                if (t->type == JX_OBJECT ||
-                    (t->type == JX_STRING && t->size != 0))
+                const struct jr_node *t = &nodes[parser->toksuper];
+                if (t->type == JR_OBJECT ||
+                    (t->type == JR_STRING && t->size != 0))
                 {
-                    return JX_INVAL;
+                    return JR_INVAL;
                 }
             }
             if ((rc = parse_primitive(parser, len, js, nnodes, nodes)))
@@ -172,17 +173,17 @@ int __jx_parser_parse(struct jx_parser *parser, const size_t len, char *js,
 
         /* Unexpected char in strict mode */
         default:
-            return JX_INVAL;
+            return JR_INVAL;
         }
     }
 
     if ((rc = check_umatched(parser, nodes))) return rc;
 
-    return JX_OK;
+    return JR_OK;
 }
 
-static int parse_primitive(struct jx_parser *parser, size_t len, char const *js,
-                           size_t nnodes, struct jx_node *nodes)
+static int parse_primitive(struct jr_parser *parser, size_t len, char const *js,
+                           size_t nnodes, struct jr_node *nodes)
 {
     int start = parser->pos;
 
@@ -205,30 +206,30 @@ static int parse_primitive(struct jx_parser *parser, size_t len, char const *js,
         if (js[parser->pos] < 32 || js[parser->pos] >= 127)
         {
             parser->pos = start;
-            return JX_INVAL;
+            return JR_INVAL;
         }
     }
     /* In strict mode primitive must be followed by a comma/object/array */
     parser->pos = start;
-    return JX_INVAL;
+    return JR_INVAL;
 
 found:;
-    struct jx_node *node = __jx_node_alloc(parser, nnodes, nodes);
+    struct jr_node *node = __jr_node_alloc(parser, nnodes, nodes);
     if (node == NULL)
     {
         parser->pos = start;
-        return JX_NOMEM;
+        return JR_NOMEM;
     }
     fill_node(node, primitive_type(js[start]), start, parser->pos);
     node->parent = parser->toksuper;
     parser->pos--;
-    return JX_OK;
+    return JR_OK;
 }
 
-static int parse_string(struct jx_parser *parser, size_t len, const char *js,
-                        size_t nnodes, struct jx_node *nodes)
+static int parse_string(struct jr_parser *parser, size_t len, const char *js,
+                        size_t nnodes, struct jr_node *nodes)
 {
-    struct jx_node *token;
+    struct jr_node *token;
 
     int start = parser->pos;
 
@@ -244,17 +245,17 @@ static int parse_string(struct jx_parser *parser, size_t len, const char *js,
         {
             if (nodes == NULL)
             {
-                return JX_OK;
+                return JR_OK;
             }
-            token = __jx_node_alloc(parser, nnodes, nodes);
+            token = __jr_node_alloc(parser, nnodes, nodes);
             if (token == NULL)
             {
                 parser->pos = start;
-                return JX_NOMEM;
+                return JR_NOMEM;
             }
-            fill_node(token, JX_STRING, start + 1, parser->pos);
+            fill_node(token, JR_STRING, start + 1, parser->pos);
             token->parent = parser->toksuper;
-            return JX_OK;
+            return JR_OK;
         }
 
         /* Backslash: Quoted symbol expected */
@@ -288,7 +289,7 @@ static int parse_string(struct jx_parser *parser, size_t len, const char *js,
                           (js[parser->pos] >= 97 && js[parser->pos] <= 102)))
                     { /* a-f */
                         parser->pos = start;
-                        return JX_INVAL;
+                        return JR_INVAL;
                     }
                     parser->pos++;
                 }
@@ -297,12 +298,12 @@ static int parse_string(struct jx_parser *parser, size_t len, const char *js,
             /* Unexpected symbol */
             default:
                 parser->pos = start;
-                return JX_INVAL;
+                return JR_INVAL;
             }
         }
     }
     parser->pos = start;
-    return JX_INVAL;
+    return JR_INVAL;
 }
 
 static int primitive_type(char c)
@@ -320,13 +321,13 @@ static int primitive_type(char c)
     case '7':
     case '8':
     case '9':
-        return JX_NUMBER;
+        return JR_NUMBER;
     case 't':
     case 'f':
-        return JX_BOOL;
+        return JR_BOOL;
         break;
     case 'n':
-        return JX_NULL;
+        return JR_NULL;
         break;
     default:
         assert(false);
@@ -334,7 +335,7 @@ static int primitive_type(char c)
     assert(false);
 }
 
-static void fill_node(struct jx_node *token, const int type, const int start,
+static void fill_node(struct jr_node *token, const int type, const int start,
                       const int end)
 {
     token->type = type;
@@ -342,3 +343,4 @@ static void fill_node(struct jx_node *token, const int type, const int start,
     token->end = end;
     token->size = 0;
 }
+/* meld-cut-here */

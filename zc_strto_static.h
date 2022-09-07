@@ -1,6 +1,7 @@
 #ifndef ZC_STRTO_STATIC_H
 #define ZC_STRTO_STATIC_H
 
+/* meld-cut-here */
 #include <assert.h>
 #include <errno.h>
 #include <inttypes.h>
@@ -379,5 +380,6 @@ ZC_API long double zc_strto_ldouble(const char *restrict nptr,
     errno = 0;
     return strtold(nptr, endptr);
 }
+/* meld-cut-here */
 
 #endif

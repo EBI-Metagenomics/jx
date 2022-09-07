@@ -1,62 +1,63 @@
-#include "jx_write.h"
+#include "jw.h"
 
+/* meld-cut-here */
 static unsigned put_unquoted_cstr(char buf[], char const *str);
 static unsigned itoa_rev(char buf[], long i);
 static void reverse(char buf[], int size);
 
-unsigned jx_put_bool(char buf[], bool val)
+unsigned jw_bool(char buf[], bool x)
 {
-    return put_unquoted_cstr(buf, val ? "true" : "false");
+    return put_unquoted_cstr(buf, x ? "true" : "false");
 }
 
-unsigned jx_put_int(char buf[], long val)
+unsigned jw_int(char buf[], long x)
 {
-    unsigned size = itoa_rev(buf, val);
+    unsigned size = itoa_rev(buf, x);
     reverse(buf, size);
     return size;
 }
 
-unsigned jx_put_null(char buf[]) { return put_unquoted_cstr(buf, "null"); }
+unsigned jw_null(char buf[]) { return put_unquoted_cstr(buf, "null"); }
 
-unsigned jx_put_str(char buf[], char const val[])
+unsigned jw_str(char buf[], char const x[])
 {
     buf[0] = '\"';
-    unsigned size = put_unquoted_cstr(buf + 1, val);
+    unsigned size = put_unquoted_cstr(buf + 1, x);
     buf[size + 1] = '\"';
     return size + 2;
 }
 
-unsigned jx_put_object_open(char buf[])
+unsigned jw_object_open(char buf[])
 {
     buf[0] = '{';
     return 1;
 }
 
-unsigned jx_put_object_close(char buf[])
+unsigned jw_object_close(char buf[])
 {
     buf[0] = '}';
     return 1;
 }
 
-unsigned jx_put_array_open(char buf[])
+unsigned jw_array_open(char buf[])
 {
     buf[0] = '[';
     return 1;
 }
 
-unsigned jx_put_array_close(char buf[])
+unsigned jw_array_close(char buf[])
 {
     buf[0] = ']';
     return 1;
 }
 
-unsigned jx_put_comma(char buf[])
+unsigned jw_comma(char buf[])
 {
     buf[0] = ',';
     return 1;
 }
 
-unsigned jx_put_colon(char buf[])
+unsigned jw_colon(char buf[])
 {
     buf[0] = ':';
     return 1;
@@ -90,8 +91,6 @@ static unsigned itoa_rev(char buf[], long i)
     return (unsigned)(dst - buf);
 }
 
-// swap the values in the two given variables
-// XXX: fails when a and b refer to same memory location
 #define XOR_SWAP(a, b)                                                         \
     do                                                                         \
     {                                                                          \
@@ -111,3 +110,4 @@ static void reverse(char buf[], int size)
         end--;
     }
 }
+/* meld-cut-here */

@@ -1,10 +1,9 @@
-#include "jx_read.h"
-#include "jx_write.h"
+#include "jr.h"
 #include "test_utils.h"
 #include <errno.h>
 #include <string.h>
 
-JX_DECLARE(jx, 128);
+JR_DECLARE(jr, 128);
 
 static char person_json[] = "{ \"name\" : \"Jack\", \"age\" : 27 }";
 static char unmatched_json[] = "{ \"name\" : \"Jack\", \"age\" : 27 ";
@@ -44,166 +43,166 @@ int main(void)
 
 static void test_person(void)
 {
-    JX_INIT(jx);
-    ASSERT(!jx_parse(jx, person_json));
-    ASSERT(jx_error() == JX_OK);
+    JR_INIT(jr);
+    ASSERT(!jr_parse(jr, person_json));
+    ASSERT(jr_error() == JR_OK);
 
-    ASSERT(jx_type(jx) == JX_OBJECT);
-    ASSERT(jx_nchild(jx) == 2);
-    ASSERT(jx_type(jx_next(jx)) == JX_STRING);
-    ASSERT(jx_nchild(jx) == 1);
-    ASSERT(jx_type(jx_next(jx)) == JX_STRING);
-    ASSERT(jx_nchild(jx) == 0);
-    ASSERT(jx_type(jx_next(jx)) == JX_STRING);
-    ASSERT(jx_type(jx_next(jx)) == JX_NUMBER);
-    ASSERT(jx_type(jx_next(jx)) == JX_SENTINEL);
-    ASSERT(jx_type(jx_next(jx)) == JX_SENTINEL);
-    ASSERT(jx_nchild(jx) == 0);
+    ASSERT(jr_type(jr) == JR_OBJECT);
+    ASSERT(jr_nchild(jr) == 2);
+    ASSERT(jr_type(jr_next(jr)) == JR_STRING);
+    ASSERT(jr_nchild(jr) == 1);
+    ASSERT(jr_type(jr_next(jr)) == JR_STRING);
+    ASSERT(jr_nchild(jr) == 0);
+    ASSERT(jr_type(jr_next(jr)) == JR_STRING);
+    ASSERT(jr_type(jr_next(jr)) == JR_NUMBER);
+    ASSERT(jr_type(jr_next(jr)) == JR_SENTINEL);
+    ASSERT(jr_type(jr_next(jr)) == JR_SENTINEL);
+    ASSERT(jr_nchild(jr) == 0);
 
-    ASSERT(jx_type(jx_back(jx)) == JX_NUMBER);
-    ASSERT(jx_type(jx_back(jx)) == JX_STRING);
-    ASSERT(jx_type(jx_back(jx)) == JX_STRING);
-    ASSERT(jx_type(jx_back(jx)) == JX_STRING);
-    ASSERT(jx_type(jx_back(jx)) == JX_OBJECT);
-    ASSERT(jx_type(jx_back(jx)) == JX_OBJECT);
+    ASSERT(jr_type(jr_back(jr)) == JR_NUMBER);
+    ASSERT(jr_type(jr_back(jr)) == JR_STRING);
+    ASSERT(jr_type(jr_back(jr)) == JR_STRING);
+    ASSERT(jr_type(jr_back(jr)) == JR_STRING);
+    ASSERT(jr_type(jr_back(jr)) == JR_OBJECT);
+    ASSERT(jr_type(jr_back(jr)) == JR_OBJECT);
 
-    ASSERT(jx_type(jx_up(jx)) == JX_SENTINEL);
-    ASSERT(jx_type(jx_back(jx)) == JX_OBJECT);
-    ASSERT(jx_type(jx_down(jx)) == JX_STRING);
-    ASSERT(jx_type(jx_down(jx)) == JX_STRING);
-    ASSERT(jx_type(jx_down(jx)) == JX_SENTINEL);
-    ASSERT(jx_type(jx_down(jx)) == JX_SENTINEL);
-    ASSERT(jx_type(jx_back(jx)) == JX_STRING);
-    ASSERT(jx_type(jx_back(jx)) == JX_STRING);
-    ASSERT(jx_type(jx_back(jx)) == JX_OBJECT);
+    ASSERT(jr_type(jr_up(jr)) == JR_SENTINEL);
+    ASSERT(jr_type(jr_back(jr)) == JR_OBJECT);
+    ASSERT(jr_type(jr_down(jr)) == JR_STRING);
+    ASSERT(jr_type(jr_down(jr)) == JR_STRING);
+    ASSERT(jr_type(jr_down(jr)) == JR_SENTINEL);
+    ASSERT(jr_type(jr_down(jr)) == JR_SENTINEL);
+    ASSERT(jr_type(jr_back(jr)) == JR_STRING);
+    ASSERT(jr_type(jr_back(jr)) == JR_STRING);
+    ASSERT(jr_type(jr_back(jr)) == JR_OBJECT);
 
-    ASSERT(jx_type(jx_right(jx)) == JX_SENTINEL);
-    ASSERT(jx_type(jx_back(jx)) == JX_OBJECT);
-    ASSERT(jx_type(jx_down(jx)) == JX_STRING);
-    ASSERT(jx_type(jx_right(jx)) == JX_STRING);
-    ASSERT(jx_type(jx_right(jx)) == JX_SENTINEL);
-    ASSERT(jx_type(jx_back(jx)) == JX_STRING);
-    ASSERT(jx_type(jx_up(jx)) == JX_OBJECT);
-    ASSERT(jx_error() == JX_OK);
-    ASSERT(jx_type(jx_object_at(jx, "notfound")) == JX_OBJECT);
-    ASSERT(jx_error() == JX_NOTFOUND);
-    jx_reset(jx);
-    ASSERT(jx_type(jx) == JX_OBJECT);
-    ASSERT(!strcmp(jx_as_string(jx_object_at(jx, "name")), "Jack"));
-    ASSERT(jx_error() == JX_OK);
-    jx_up(jx);
-    jx_up(jx);
-    ASSERT(jx_type(jx) == JX_OBJECT);
-    ASSERT(!strcmp(jx_as_string(jx_object_at(jx, "name")), "Jack"));
-    ASSERT(jx_error() == JX_OK);
-    jx_up(jx);
-    jx_up(jx);
-    ASSERT(jx_type(jx) == JX_OBJECT);
-    ASSERT(jx_as_int(jx_object_at(jx, "age")) == 27);
-    ASSERT(jx_error() == JX_OK);
-    jx_up(jx);
-    jx_up(jx);
-    ASSERT(jx_type(jx) == JX_OBJECT);
-    ASSERT(!strcmp(jx_string_of(jx, "name"), "Jack"));
-    ASSERT(jx_int_of(jx, "age") == 27);
-    ASSERT(jx_long_of(jx, "age") == 27);
-    ASSERT(jx_uint_of(jx, "age") == 27);
-    ASSERT(jx_ulong_of(jx, "age") == 27);
+    ASSERT(jr_type(jr_right(jr)) == JR_SENTINEL);
+    ASSERT(jr_type(jr_back(jr)) == JR_OBJECT);
+    ASSERT(jr_type(jr_down(jr)) == JR_STRING);
+    ASSERT(jr_type(jr_right(jr)) == JR_STRING);
+    ASSERT(jr_type(jr_right(jr)) == JR_SENTINEL);
+    ASSERT(jr_type(jr_back(jr)) == JR_STRING);
+    ASSERT(jr_type(jr_up(jr)) == JR_OBJECT);
+    ASSERT(jr_error() == JR_OK);
+    ASSERT(jr_type(jr_object_at(jr, "notfound")) == JR_OBJECT);
+    ASSERT(jr_error() == JR_NOTFOUND);
+    jr_reset(jr);
+    ASSERT(jr_type(jr) == JR_OBJECT);
+    ASSERT(!strcmp(jr_as_string(jr_object_at(jr, "name")), "Jack"));
+    ASSERT(jr_error() == JR_OK);
+    jr_up(jr);
+    jr_up(jr);
+    ASSERT(jr_type(jr) == JR_OBJECT);
+    ASSERT(!strcmp(jr_as_string(jr_object_at(jr, "name")), "Jack"));
+    ASSERT(jr_error() == JR_OK);
+    jr_up(jr);
+    jr_up(jr);
+    ASSERT(jr_type(jr) == JR_OBJECT);
+    ASSERT(jr_as_int(jr_object_at(jr, "age")) == 27);
+    ASSERT(jr_error() == JR_OK);
+    jr_up(jr);
+    jr_up(jr);
+    ASSERT(jr_type(jr) == JR_OBJECT);
+    ASSERT(!strcmp(jr_string_of(jr, "name"), "Jack"));
+    ASSERT(jr_int_of(jr, "age") == 27);
+    ASSERT(jr_long_of(jr, "age") == 27);
+    ASSERT(jr_uint_of(jr, "age") == 27);
+    ASSERT(jr_ulong_of(jr, "age") == 27);
 }
 
 static void test_unmatched(void)
 {
-    JX_INIT(jx);
-    ASSERT(jx_parse(jx, unmatched_json) == JX_INVAL);
+    JR_INIT(jr);
+    ASSERT(jr_parse(jr, unmatched_json) == JR_INVAL);
 }
 
 static void test_array(void)
 {
-    JX_INIT(jx);
-    ASSERT(!jx_parse(jx, array_json));
+    JR_INIT(jr);
+    ASSERT(!jr_parse(jr, array_json));
 
-    ASSERT(jx_type(jx) == JX_ARRAY);
-    ASSERT(jx_nchild(jx) == 3);
-    ASSERT(jx_type(jx_next(jx)) == JX_NUMBER);
-    ASSERT(jx_type(jx_next(jx)) == JX_NUMBER);
-    ASSERT(jx_type(jx_next(jx)) == JX_OBJECT);
-    ASSERT(jx_nchild(jx) == 2);
-    ASSERT(jx_type(jx_back(jx)) == JX_NUMBER);
-    ASSERT(jx_type(jx_back(jx)) == JX_NUMBER);
-    ASSERT(jx_type(jx_back(jx)) == JX_ARRAY);
+    ASSERT(jr_type(jr) == JR_ARRAY);
+    ASSERT(jr_nchild(jr) == 3);
+    ASSERT(jr_type(jr_next(jr)) == JR_NUMBER);
+    ASSERT(jr_type(jr_next(jr)) == JR_NUMBER);
+    ASSERT(jr_type(jr_next(jr)) == JR_OBJECT);
+    ASSERT(jr_nchild(jr) == 2);
+    ASSERT(jr_type(jr_back(jr)) == JR_NUMBER);
+    ASSERT(jr_type(jr_back(jr)) == JR_NUMBER);
+    ASSERT(jr_type(jr_back(jr)) == JR_ARRAY);
 
-    ASSERT(jx_type(jx_array_at(jx, 0)) == JX_NUMBER);
-    ASSERT(jx_error() == JX_OK);
-    ASSERT(jx_type(jx_up(jx)) == JX_ARRAY);
+    ASSERT(jr_type(jr_array_at(jr, 0)) == JR_NUMBER);
+    ASSERT(jr_error() == JR_OK);
+    ASSERT(jr_type(jr_up(jr)) == JR_ARRAY);
 
-    ASSERT(jx_type(jx_array_at(jx, 1)) == JX_NUMBER);
-    ASSERT(jx_error() == JX_OK);
-    ASSERT(jx_type(jx_up(jx)) == JX_ARRAY);
+    ASSERT(jr_type(jr_array_at(jr, 1)) == JR_NUMBER);
+    ASSERT(jr_error() == JR_OK);
+    ASSERT(jr_type(jr_up(jr)) == JR_ARRAY);
 
-    ASSERT(jx_type(jx_array_at(jx, 2)) == JX_OBJECT);
-    ASSERT(jx_error() == JX_OK);
-    ASSERT(jx_type(jx_up(jx)) == JX_ARRAY);
+    ASSERT(jr_type(jr_array_at(jr, 2)) == JR_OBJECT);
+    ASSERT(jr_error() == JR_OK);
+    ASSERT(jr_type(jr_up(jr)) == JR_ARRAY);
 
-    ASSERT(jx_type(jx_array_at(jx, 3)) == JX_ARRAY);
-    ASSERT(jx_error() == JX_OUTRANGE);
+    ASSERT(jr_type(jr_array_at(jr, 3)) == JR_ARRAY);
+    ASSERT(jr_error() == JR_OUTRANGE);
 }
 
 static void test_empty_array(void)
 {
-    JX_INIT(jx);
-    ASSERT(!jx_parse(jx, empty_array_json));
+    JR_INIT(jr);
+    ASSERT(!jr_parse(jr, empty_array_json));
 
-    ASSERT(jx_type(jx) == JX_ARRAY);
-    ASSERT(jx_nchild(jx) == 0);
+    ASSERT(jr_type(jr) == JR_ARRAY);
+    ASSERT(jr_nchild(jr) == 0);
 }
 
 static void test_object_array(void)
 {
-    JX_INIT(jx);
-    ASSERT(!jx_parse(jx, empty_object_json));
+    JR_INIT(jr);
+    ASSERT(!jr_parse(jr, empty_object_json));
 
-    ASSERT(jx_type(jx) == JX_OBJECT);
-    ASSERT(jx_nchild(jx) == 0);
+    ASSERT(jr_type(jr) == JR_OBJECT);
+    ASSERT(jr_nchild(jr) == 0);
 }
 
 static void test_array_array(void)
 {
-    JX_INIT(jx);
-    ASSERT(!jx_parse(jx, array_array_json));
-    ASSERT(jx_error() == JX_OK);
+    JR_INIT(jr);
+    ASSERT(!jr_parse(jr, array_array_json));
+    ASSERT(jr_error() == JR_OK);
 
-    ASSERT(jx_type(jx) == JX_ARRAY);
-    ASSERT(jx_nchild(jx) == 3);
-    ASSERT(jx_type(jx_down(jx)) == JX_ARRAY);
-    ASSERT(jx_nchild(jx) == 2);
-    ASSERT(jx_type(jx_down(jx)) == JX_BOOL);
-    ASSERT(jx_as_bool(jx) == true);
-    ASSERT(jx_type(jx_next(jx)) == JX_BOOL);
-    ASSERT(jx_as_bool(jx) == false);
-    ASSERT(jx_type(jx_up(jx)) == JX_ARRAY);
-    ASSERT(jx_type(jx_up(jx)) == JX_ARRAY);
-    ASSERT(jx_type(jx_array_at(jx, 1)) == JX_ARRAY);
-    ASSERT(jx_type(jx_down(jx)) == JX_NULL);
-    ASSERT(jx_as_null(jx) == NULL);
-    ASSERT(jx_type(jx_next(jx)) == JX_NUMBER);
-    ASSERT(jx_as_int(jx) == -23);
-    ASSERT(jx_type(jx_up(jx)) == JX_ARRAY);
-    ASSERT(jx_type(jx_up(jx)) == JX_ARRAY);
-    ASSERT(jx_type(jx_array_at(jx, 2)) == JX_ARRAY);
-    ASSERT(jx_type(jx_down(jx)) == JX_NUMBER);
-    ASSERT(jx_as_double(jx) == -1.0);
-    ASSERT(jx_error() == JX_OK);
+    ASSERT(jr_type(jr) == JR_ARRAY);
+    ASSERT(jr_nchild(jr) == 3);
+    ASSERT(jr_type(jr_down(jr)) == JR_ARRAY);
+    ASSERT(jr_nchild(jr) == 2);
+    ASSERT(jr_type(jr_down(jr)) == JR_BOOL);
+    ASSERT(jr_as_bool(jr) == true);
+    ASSERT(jr_type(jr_next(jr)) == JR_BOOL);
+    ASSERT(jr_as_bool(jr) == false);
+    ASSERT(jr_type(jr_up(jr)) == JR_ARRAY);
+    ASSERT(jr_type(jr_up(jr)) == JR_ARRAY);
+    ASSERT(jr_type(jr_array_at(jr, 1)) == JR_ARRAY);
+    ASSERT(jr_type(jr_down(jr)) == JR_NULL);
+    ASSERT(jr_as_null(jr) == NULL);
+    ASSERT(jr_type(jr_next(jr)) == JR_NUMBER);
+    ASSERT(jr_as_int(jr) == -23);
+    ASSERT(jr_type(jr_up(jr)) == JR_ARRAY);
+    ASSERT(jr_type(jr_up(jr)) == JR_ARRAY);
+    ASSERT(jr_type(jr_array_at(jr, 2)) == JR_ARRAY);
+    ASSERT(jr_type(jr_down(jr)) == JR_NUMBER);
+    ASSERT(jr_as_double(jr) == -1.0);
+    ASSERT(jr_error() == JR_OK);
 }
 
 static void test_array_string(void)
 {
-    JX_INIT(jx);
-    ASSERT(!jx_parse(jx, array_string_json));
-    ASSERT(jx_error() == JX_OK);
+    JR_INIT(jr);
+    ASSERT(!jr_parse(jr, array_string_json));
+    ASSERT(jr_error() == JR_OK);
 
-    ASSERT(jx_type(jx) == JX_ARRAY);
-    ASSERT(jx_type(jx_next(jx)) == JX_STRING);
-    ASSERT(!strcmp(jx_as_string(jx), "true"));
-    ASSERT(jx_as_null(jx) == NULL);
-    ASSERT(jx_error() == JX_INVAL);
+    ASSERT(jr_type(jr) == JR_ARRAY);
+    ASSERT(jr_type(jr_next(jr)) == JR_STRING);
+    ASSERT(!strcmp(jr_as_string(jr), "true"));
+    ASSERT(jr_as_null(jr) == NULL);
+    ASSERT(jr_error() == JR_INVAL);
 }
