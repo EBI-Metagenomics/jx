@@ -1,6 +1,6 @@
 .POSIX:
 
-JX_VERSION := 0.3.0
+JX_VERSION := 0.4.0
 
 CC ?= gcc
 CFLAGS := $(CFLAGS) -std=c99 -Wall -Wextra
