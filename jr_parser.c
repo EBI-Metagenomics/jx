@@ -29,6 +29,14 @@ extern void jr_parser_init(struct jr_parser *parser, int alloc_size)
     parser->toksuper = -1;
 }
 
+extern void jr_parser_reset(struct jr_parser *parser)
+{
+    parser->size = 0;
+    parser->pos = 0;
+    parser->toknext = 0;
+    parser->toksuper = -1;
+}
+
 extern int jr_parser_parse(struct jr_parser *parser, const int len, char *js,
                            int nnodes, struct jr_node *nodes)
 {

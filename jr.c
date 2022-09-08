@@ -77,6 +77,7 @@ static long strto_long(const char *restrict, char **restrict, int);
 static unsigned long strto_ulong(const char *restrict, char **restrict, int);
 static double strto_double(const char *restrict, char **restrict);
 extern void jr_parser_init(struct jr_parser *parser, int size);
+extern void jr_parser_reset(struct jr_parser *parser);
 extern int jr_parser_parse(struct jr_parser *, int length, char *json,
                            int nnodes, struct jr_node *);
 extern void jr_cursor_init(struct jr_cursor *cursor, int length, char *json);
@@ -90,6 +91,7 @@ void __jr_init(struct jr jr[], int alloc_size)
 int jr_parse(struct jr jr[], int length, char *json)
 {
     error = JR_OK;
+    jr_parser_reset(get_parser(jr));
     jr_cursor_init(cursor(jr), length, json);
     struct jr_parser *p = get_parser(jr);
     struct jr_cursor *c = cursor(jr);
