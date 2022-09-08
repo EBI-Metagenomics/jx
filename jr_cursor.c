@@ -1,10 +1,9 @@
 #include "jr_cursor.h"
-/* meld-cut-here */
-#include <string.h>
 
-extern void jr_cursor_init(struct jr_cursor *cursor, char *json)
+/* meld-cut-here */
+extern void jr_cursor_init(struct jr_cursor *cursor, int length, char *json)
 {
-    cursor->length = strlen(json);
+    cursor->length = length;
     cursor->json = json;
     cursor->pos = 0;
 }

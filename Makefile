@@ -1,15 +1,15 @@
 .POSIX:
 
-JX_VERSION := 0.1.0
+JX_VERSION := 0.2.0
 
 CC ?= gcc
-CFLAGS := $(CFLAGS) -std=c99 -Wall
+CFLAGS := $(CFLAGS) -std=c99 -Wall -Wextra
 
 SRC := jr.c jr_cursor.c jr_node.c jr_parser.c jw.c
 OBJ := $(SRC:.c=.o)
 HDR := jr_compiler.h jr_type.h jr_error.h jr_node.h jr_parser.h jr_cursor.h jr.h jw.h
 
-all: meld check
+all: meld
 
 jx.h: $(HDR)
 	./meld.sh hdr $^ > jx.h
@@ -38,6 +38,8 @@ check: test_read test_write
 	./test_read
 	./test_write
 
+test: check
+
 dist: clean meld
 	mkdir -p jx-$(JX_VERSION)
 	cp -R README.md LICENSE jx.h jx.c jx-$(JX_VERSION)
@@ -50,4 +52,4 @@ distclean:
 clean: distclean
 	rm -f $(OBJ) test_read test_write *.o jx.c jx.h
 
-.PHONY: all check meld dist distclean clean 
+.PHONY: all check test meld dist distclean clean

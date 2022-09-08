@@ -6,11 +6,10 @@
 JR_DECLARE(jr, 128);
 
 static char person_json[] = "{ \"name\" : \"Jack\", \"age\" : 27 }";
-static char unmatched_json[] = "{ \"name\" : \"Jack\", \"age\" : 27 ";
 static char array_json[] = "[0, 3, { \"name\" : \"Jack\", \"age\" : 27 }]";
 static char empty_array_json[] = "[]";
 static char empty_object_json[] = "{}";
-static char array_array_json[] = "[[true, false], [null, -23], [-1.0]]";
+static char long_array_json[] = "[[true, false], [null, -23], [-1.0]]";
 static char array_string_json[] = "[\"true\"]";
 static char single_true_json[] = "true";
 
@@ -39,7 +38,7 @@ int main(void)
 static void test_person(void)
 {
     JR_INIT(jr);
-    ASSERT(!jr_parse(jr, person_json));
+    ASSERT(!jr_parse(jr, strlen(person_json), person_json));
     ASSERT(jr_error() == JR_OK);
 
     ASSERT(jr_type(jr) == JR_OBJECT);
@@ -108,13 +107,13 @@ static void test_person(void)
 static void test_unmatched(void)
 {
     JR_INIT(jr);
-    ASSERT(jr_parse(jr, unmatched_json) == JR_INVAL);
+    ASSERT(jr_parse(jr, strlen(person_json), person_json) == JR_INVAL);
 }
 
 static void test_array(void)
 {
     JR_INIT(jr);
-    ASSERT(!jr_parse(jr, array_json));
+    ASSERT(!jr_parse(jr, strlen(array_json), array_json));
 
     ASSERT(jr_type(jr) == JR_ARRAY);
     ASSERT(jr_nchild(jr) == 3);
@@ -145,7 +144,7 @@ static void test_array(void)
 static void test_empty_array(void)
 {
     JR_INIT(jr);
-    ASSERT(!jr_parse(jr, empty_array_json));
+    ASSERT(!jr_parse(jr, strlen(empty_array_json), empty_array_json));
 
     ASSERT(jr_type(jr) == JR_ARRAY);
     ASSERT(jr_nchild(jr) == 0);
@@ -154,7 +153,7 @@ static void test_empty_array(void)
 static void test_object_array(void)
 {
     JR_INIT(jr);
-    ASSERT(!jr_parse(jr, empty_object_json));
+    ASSERT(!jr_parse(jr, strlen(empty_object_json), empty_object_json));
 
     ASSERT(jr_type(jr) == JR_OBJECT);
     ASSERT(jr_nchild(jr) == 0);
@@ -163,7 +162,7 @@ static void test_object_array(void)
 static void test_array_array(void)
 {
     JR_INIT(jr);
-    ASSERT(!jr_parse(jr, array_array_json));
+    ASSERT(!jr_parse(jr, strlen(long_array_json), long_array_json));
     ASSERT(jr_error() == JR_OK);
 
     ASSERT(jr_type(jr) == JR_ARRAY);
@@ -192,7 +191,7 @@ static void test_array_array(void)
 static void test_array_string(void)
 {
     JR_INIT(jr);
-    ASSERT(!jr_parse(jr, array_string_json));
+    ASSERT(!jr_parse(jr, strlen(array_string_json), array_string_json));
     ASSERT(jr_error() == JR_OK);
 
     ASSERT(jr_type(jr) == JR_ARRAY);
@@ -205,5 +204,6 @@ static void test_array_string(void)
 static void test_single_true(void)
 {
     JR_INIT(jr);
-    ASSERT(jr_parse(jr, single_true_json) == JR_INVAL);
+    ASSERT(jr_parse(jr, strlen(single_true_json), single_true_json) ==
+           JR_INVAL);
 }

@@ -28,7 +28,7 @@ struct jr
 #define JR_INIT(name) __jr_init((name), __JR_ARRAY_SIZE(name))
 
 void __jr_init(struct jr[], int alloc_size);
-int jr_parse(struct jr[], char *json);
+int jr_parse(struct jr[], int length, char *json);
 int jr_error(void);
 void jr_reset(struct jr[]);
 int jr_type(struct jr const[]);

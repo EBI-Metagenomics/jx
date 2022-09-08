@@ -6,14 +6,19 @@
 #include <assert.h>
 #include <stdbool.h>
 
-static int parse_primitive(struct jr_parser *parser, size_t length,
-                           char const *json, size_t num_tokens,
+static int parse_primitive(struct jr_parser *parser, int length,
+                           char const *json, int num_tokens,
                            struct jr_node *tokens);
-static int parse_string(struct jr_parser *parser, size_t len, const char *js,
-                        size_t nnodes, struct jr_node *nodes);
+static int parse_string(struct jr_parser *parser, int len, const char *js,
+                        int nnodes, struct jr_node *nodes);
 static int primitive_type(char c);
 static void fill_node(struct jr_node *token, const int type, const int start,
                       const int end);
+static int open_bracket(char c, struct jr_parser *parser, int nnodes,
+                        struct jr_node *nodes);
+static int check_umatched(struct jr_parser *parser, struct jr_node *nodes);
+static int close_bracket(char c, struct jr_parser *parser,
+                         struct jr_node *nodes);
 
 extern void jr_parser_init(struct jr_parser *parser, int alloc_size)
 {
@@ -24,73 +29,7 @@ extern void jr_parser_init(struct jr_parser *parser, int alloc_size)
     parser->toksuper = -1;
 }
 
-static int open_bracket(char c, struct jr_parser *parser, int nnodes,
-                        struct jr_node *nodes)
-{
-    struct jr_node *node = __jr_node_alloc(parser, nnodes, nodes);
-    if (node == NULL) return JR_NOMEM;
-    if (parser->toksuper != -1)
-    {
-        struct jr_node *t = &nodes[parser->toksuper];
-        /* In strict mode an object or array can't become a key */
-        if (t->type == JR_OBJECT)
-        {
-            return JR_INVAL;
-        }
-        t->size++;
-        node->parent = parser->toksuper;
-    }
-    node->type = (c == '{' ? JR_OBJECT : JR_ARRAY);
-    node->start = parser->pos;
-    parser->toksuper = parser->toknext - 1;
-    return JR_OK;
-}
-
-static int check_umatched(struct jr_parser *parser, struct jr_node *nodes)
-{
-    for (int i = parser->toknext - 1; i >= 0; i--)
-    {
-        /* Unmatched opened object or array */
-        if (nodes[i].start != -1 && nodes[i].end == -1) return JR_INVAL;
-    }
-    return JR_OK;
-}
-
-static int close_bracket(char c, struct jr_parser *parser, int nnodes,
-                         struct jr_node *nodes)
-{
-    int type = (c == '}' ? JR_OBJECT : JR_ARRAY);
-    if (parser->toknext < 1)
-    {
-        return JR_INVAL;
-    }
-    struct jr_node *node = &nodes[parser->toknext - 1];
-    for (;;)
-    {
-        if (node->start != -1 && node->end == -1)
-        {
-            if (node->type != type)
-            {
-                return JR_INVAL;
-            }
-            node->end = parser->pos + 1;
-            parser->toksuper = node->parent;
-            break;
-        }
-        if (node->parent == -1)
-        {
-            if (node->type != type || parser->toksuper == -1)
-            {
-                return JR_INVAL;
-            }
-            break;
-        }
-        node = &nodes[node->parent];
-    }
-    return JR_OK;
-}
-
-extern int jr_parser_parse(struct jr_parser *parser, const size_t len, char *js,
+extern int jr_parser_parse(struct jr_parser *parser, const int len, char *js,
                            int nnodes, struct jr_node *nodes)
 {
     int rc = JR_OK;
@@ -108,7 +47,7 @@ extern int jr_parser_parse(struct jr_parser *parser, const size_t len, char *js,
             break;
         case '}':
         case ']':
-            if ((rc = close_bracket(c, parser, nnodes, nodes))) return rc;
+            if ((rc = close_bracket(c, parser, nodes))) return rc;
             break;
         case '\"':
             if ((rc = parse_string(parser, len, js, nnodes, nodes))) return rc;
@@ -178,8 +117,8 @@ extern int jr_parser_parse(struct jr_parser *parser, const size_t len, char *js,
     return JR_OK;
 }
 
-static int parse_primitive(struct jr_parser *parser, size_t len, char const *js,
-                           size_t nnodes, struct jr_node *nodes)
+static int parse_primitive(struct jr_parser *parser, int len, char const *js,
+                           int nnodes, struct jr_node *nodes)
 {
     int start = parser->pos;
 
@@ -222,8 +161,8 @@ found:;
     return JR_OK;
 }
 
-static int parse_string(struct jr_parser *parser, size_t len, const char *js,
-                        size_t nnodes, struct jr_node *nodes)
+static int parse_string(struct jr_parser *parser, int len, const char *js,
+                        int nnodes, struct jr_node *nodes)
 {
     struct jr_node *token;
 
@@ -338,5 +277,71 @@ static void fill_node(struct jr_node *token, const int type, const int start,
     token->start = start;
     token->end = end;
     token->size = 0;
+}
+
+static int open_bracket(char c, struct jr_parser *parser, int nnodes,
+                        struct jr_node *nodes)
+{
+    struct jr_node *node = __jr_node_alloc(parser, nnodes, nodes);
+    if (node == NULL) return JR_NOMEM;
+    if (parser->toksuper != -1)
+    {
+        struct jr_node *t = &nodes[parser->toksuper];
+        /* In strict mode an object or array can't become a key */
+        if (t->type == JR_OBJECT)
+        {
+            return JR_INVAL;
+        }
+        t->size++;
+        node->parent = parser->toksuper;
+    }
+    node->type = (c == '{' ? JR_OBJECT : JR_ARRAY);
+    node->start = parser->pos;
+    parser->toksuper = parser->toknext - 1;
+    return JR_OK;
+}
+
+static int check_umatched(struct jr_parser *parser, struct jr_node *nodes)
+{
+    for (int i = parser->toknext - 1; i >= 0; i--)
+    {
+        /* Unmatched opened object or array */
+        if (nodes[i].start != -1 && nodes[i].end == -1) return JR_INVAL;
+    }
+    return JR_OK;
+}
+
+static int close_bracket(char c, struct jr_parser *parser,
+                         struct jr_node *nodes)
+{
+    int type = (c == '}' ? JR_OBJECT : JR_ARRAY);
+    if (parser->toknext < 1)
+    {
+        return JR_INVAL;
+    }
+    struct jr_node *node = &nodes[parser->toknext - 1];
+    for (;;)
+    {
+        if (node->start != -1 && node->end == -1)
+        {
+            if (node->type != type)
+            {
+                return JR_INVAL;
+            }
+            node->end = parser->pos + 1;
+            parser->toksuper = node->parent;
+            break;
+        }
+        if (node->parent == -1)
+        {
+            if (node->type != type || parser->toksuper == -1)
+            {
+                return JR_INVAL;
+            }
+            break;
+        }
+        node = &nodes[node->parent];
+    }
+    return JR_OK;
 }
 /* meld-cut-here */

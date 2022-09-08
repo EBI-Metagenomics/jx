@@ -8,8 +8,8 @@ struct jr_parser
 {
     int alloc_size;
     int size;
-    unsigned pos;
-    unsigned toknext;
+    int pos;
+    int toknext;
     int toksuper;
 };
 /* meld-cut-here */
