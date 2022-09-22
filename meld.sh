@@ -11,6 +11,12 @@ if [ "$type" != "hdr" ] && [ "$type" != "src" ]; then
     display_usage
 fi
 
+if type clang-format >/dev/null 2>&1; then
+    FORMAT="clang-format -style=file"
+else
+    FORMAT="tee"
+fi
+
 files=$*
 {
     if [ "$type" == "hdr" ]; then
@@ -33,4 +39,4 @@ files=$*
     done
 
     if [ "$type" == "hdr" ]; then echo "#endif"; fi
-} | clang-format -style=file
+} | $FORMAT
