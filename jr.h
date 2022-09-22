@@ -30,6 +30,7 @@ struct jr
 void __jr_init(struct jr[], int alloc_size);
 int jr_parse(struct jr[], int length, char *json);
 int jr_error(void);
+char const *jr_strerror(int code);
 void jr_reset(struct jr[]);
 int jr_type(struct jr const[]);
 int jr_nchild(struct jr const[]);

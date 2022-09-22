@@ -15,6 +15,7 @@ static char single_true_json[] = "true";
 static char another_json[] =
     "{\"id\":2,\"type\":0,\"state\":\"pend\",\"progress\":0,\"error\":\"\","
     "\"submission\":1662640473,\"exec_started\":0,\"exec_ended\":0}";
+static char empty_json[] = "true";
 
 static void test_person(void);
 static void test_unmatched(void);
@@ -25,6 +26,7 @@ static void test_array_array(void);
 static void test_array_string(void);
 static void test_single_true(void);
 static void test_another(void);
+static void test_empty(void);
 
 int main(void)
 {
@@ -37,6 +39,7 @@ int main(void)
     test_array_string();
     test_single_true();
     test_another();
+    test_empty();
     return 0;
 }
 
@@ -204,6 +207,7 @@ static void test_array_string(void)
     ASSERT(!strcmp(jr_as_string(jr), "true"));
     ASSERT(jr_as_null(jr) == NULL);
     ASSERT(jr_error() == JR_INVAL);
+    ASSERT(!strcmp(jr_strerror(jr_error()), "invalid value"));
 }
 
 static void test_single_true(void)
@@ -226,4 +230,11 @@ static void test_another(void)
     ASSERT(jr_long_of(jr, "submission") == 1662640473);
     ASSERT(jr_long_of(jr, "exec_started") == 0);
     ASSERT(jr_long_of(jr, "exec_ended") == 0);
+}
+
+static void test_empty(void)
+{
+    JR_INIT(jr);
+    ASSERT(jr_parse(jr, strlen(empty_json), empty_json) == JR_INVAL);
+    ASSERT(!strcmp(jr_strerror(jr_error()), "invalid value"));
 }
